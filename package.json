@@ -1,0 +1,60 @@
+{
+  "name": "@struktos/core",
+  "version": "0.1.0",
+  "description": "Enterprise-grade Node.js infrastructure with Go-style context propagation, C#-inspired architecture, and high-performance caching",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/core",
+    "dist/cache",
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/index.d.ts.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "dev": "tsx watch src/index.ts",
+    "poc": "tsx src/poc/context-poc.ts",
+    "poc:cancellation": "tsx src/poc/cancellation-poc.ts",
+    "poc:cache": "tsx src/poc/cache-poc.ts"
+  },
+  "keywords": [
+    "struktos",
+    "context",
+    "async-local-storage",
+    "context-propagation",
+    "cancellation-token",
+    "enterprise",
+    "backend",
+    "infrastructure",
+    "hexagonal-architecture",
+    "lru-cache",
+    "performance",
+    "typescript"
+  ],
+  "author": "struktos.js Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/struktosjs/core"
+  },
+  "bugs": {
+    "url": "https://github.com/struktosjs/core/issues"
+  },
+  "homepage": "https://github.com/struktosjs/core#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
