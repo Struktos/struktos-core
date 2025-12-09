@@ -1,15 +1,11 @@
 {
   "name": "@struktos/core",
-  "version": "0.1.0",
-  "description": "Enterprise-grade Node.js infrastructure with Go-style context propagation, C#-inspired architecture, and high-performance caching",
+  "version": "1.0.0",
+  "description": "Enterprise-grade Node.js platform with ASP.NET Core-inspired architecture, Go-style context propagation, and high-performance infrastructure",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist/core",
-    "dist/cache",
-    "dist/index.js",
-    "dist/index.d.ts",
-    "dist/index.d.ts.map",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -17,13 +13,22 @@
     "build": "tsc",
     "prepublishOnly": "npm run build",
     "dev": "tsx watch src/index.ts",
-    "poc": "tsx src/poc/context-poc.ts",
-    "poc:cancellation": "tsx src/poc/cancellation-poc.ts",
-    "poc:cache": "tsx src/poc/cache-poc.ts"
+    "example": "tsx examples/basic-app.ts",
+    "example:pipeline": "tsx examples/pipeline-example.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "release": "./scripts/release.sh",
+    "release:patch": "./scripts/release.sh patch",
+    "release:minor": "./scripts/release.sh minor",
+    "release:major": "./scripts/release.sh major"
   },
   "keywords": [
     "struktos",
+    "framework",
+    "platform",
     "context",
+    "middleware",
+    "pipeline",
     "async-local-storage",
     "context-propagation",
     "cancellation-token",
@@ -31,11 +36,15 @@
     "backend",
     "infrastructure",
     "hexagonal-architecture",
+    "asp-net-core",
+    "microservices",
+    "adapter",
+    "host",
     "lru-cache",
     "performance",
     "typescript"
   ],
-  "author": "struktos.js Team",
+  "author": "Struktos.js Team",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -53,7 +62,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^20.19.25",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

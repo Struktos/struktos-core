@@ -1,9 +1,15 @@
 /**
- * IContext - Go-inspired Context interface for request lifecycle management
+ * @struktos/core - Context Interface
  * 
- * This interface provides a type-safe way to propagate request-scoped values,
- * cancellation signals, and timeouts through the application stack without
- * manually passing context objects through every function call.
+ * Go-inspired Context interface for request lifecycle management.
+ * Provides type-safe way to propagate request-scoped values,
+ * cancellation signals, and timeouts through the application stack.
+ */
+
+/**
+ * IContext - Core context interface
+ * 
+ * @template T - Type of context data
  */
 export interface IContext<T = any> {
   /**
@@ -35,20 +41,49 @@ export interface IContext<T = any> {
    * Get all context data
    */
   getAll(): Readonly<Partial<T>>;
+
+  /**
+   * Check if a key exists in context
+   */
+  has<K extends keyof T>(key: K): boolean;
+
+  /**
+   * Delete a key from context
+   */
+  delete<K extends keyof T>(key: K): boolean;
 }
 
 /**
- * Standard context keys used across struktos.js
+ * Standard context keys used across Struktos.js
  */
 export interface StruktosContextData {
+  /** Unique trace ID for distributed tracing */
   traceId?: string;
+  /** Request ID */
   requestId?: string;
+  /** Authenticated user ID */
   userId?: string;
+  /** Request start timestamp */
   timestamp?: number;
+  /** HTTP method */
+  method?: string;
+  /** Request URL/path */
+  url?: string;
+  /** Client IP address */
+  ip?: string;
+  /** User agent */
+  userAgent?: string;
+  /** Authenticated user object */
+  user?: Record<string, any>;
+  /** User roles */
+  roles?: string[];
+  /** Custom claims */
+  claims?: Array<{ type: string; value: string }>;
+  /** Allow additional properties */
   [key: string]: any;
 }
 
 /**
- * Type alias for the standard struktos context
+ * Type alias for the standard Struktos context
  */
 export type StruktosContext = IContext<StruktosContextData>;

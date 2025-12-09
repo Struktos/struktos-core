@@ -1,20 +1,24 @@
-# @struktos/core
+# @struktos/core v1.0.0
 
-> Enterprise-grade infrastructure library for Node.js with Go-style context propagation
+> Enterprise-grade Node.js platform with ASP.NET Core-inspired architecture
 
 [![npm version](https://img.shields.io/npm/v/@struktos/core.svg)](https://www.npmjs.com/package/@struktos/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 Why struktos.js?
+## 🎯 What's New in v1.0.0
 
-Building scalable Node.js backends requires managing request context, handling cancellation, and ensuring high performance. struktos.js provides battle-tested infrastructure that just works.
+Version 1.0.0 establishes Struktos.js as a **standalone platform** with its own request processing pipeline, inspired by ASP.NET Core architecture.
 
-**Key Features:**
-- 🔄 **Automatic Context Propagation** - No more passing context through every function
-- 🛑 **Cancellation Tokens** - Clean resource management and request cancellation  
-- ⚡ **High-Performance Caching** - LRU cache with TTL support
-- 🏗️ **Framework Agnostic** - Works with Express, Fastify, Koa, or vanilla Node.js
-- 📘 **Full TypeScript Support** - Type-safe APIs with generics
+### Key Features
+
+- ✅ **StruktosApp** - Application entry point with fluent API
+- ✅ **IStruktosMiddleware** - ASP.NET Core-style middleware pipeline
+- ✅ **IExceptionFilter** - NestJS/ASP.NET-style exception handling
+- ✅ **IAdapter** - Framework/protocol abstraction (Express, Fastify, gRPC, etc.)
+- ✅ **IHost** - Application lifecycle and hosting management
+- ✅ **RequestContext** - Go-style context propagation (enhanced)
+- ✅ **Built-in Exceptions** - HTTP exceptions with proper typing
+- ✅ **Pipeline Utilities** - Composition, branching, retry, timeout
 
 ## 📦 Installation
 
@@ -24,183 +28,344 @@ npm install @struktos/core
 
 ## 🚀 Quick Start
 
-### Context Propagation
-
-Stop passing context objects through every function. With struktos.js, context flows automatically:
-
 ```typescript
-import { RequestContext } from '@struktos/core';
+import { 
+  StruktosApp, 
+  createMiddleware,
+  BadRequestException 
+} from '@struktos/core';
+import { createExpressAdapter } from '@struktos/adapter-express';
 
-// Initialize context (e.g., in Express middleware)
-app.use((req, res, next) => {
-  RequestContext.run(
-    {
-      traceId: generateTraceId(),
-      requestId: req.id,
-      userId: req.user?.id,
-      timestamp: Date.now()
-    },
-    () => next()
-  );
+// Create application
+const app = StruktosApp.create({ name: 'my-api' });
+
+// Add middleware
+app.use(async (ctx, next) => {
+  console.log(`${ctx.request.method} ${ctx.request.path}`);
+  await next();
 });
 
-// Access context anywhere in your call stack
-async function businessLogic() {
-  const context = RequestContext.current();
-  const traceId = context?.get('traceId');
-  
-  console.log(`Processing request ${traceId}`);
-  
-  // Context automatically available in nested calls
-  await dataLayer();
-}
+// Add route handler
+app.use(async (ctx, next) => {
+  if (ctx.request.path === '/hello') {
+    ctx.response.body = { message: 'Hello, World!' };
+    return;
+  }
+  await next();
+});
 
-async function dataLayer() {
-  const context = RequestContext.current();
-  const userId = context?.get('userId');
-  
-  // No manual passing needed!
-  return db.query('SELECT * FROM users WHERE id = ?', [userId]);
-}
+// Start with Express adapter
+const adapter = createExpressAdapter();
+await app.listen(adapter, 3000);
 ```
 
-### Cancellation Tokens
+## 📖 Core Concepts
 
-Handle request cancellation and clean up resources gracefully:
+### StruktosApp
+
+The main application class - your entry point for building Struktos applications.
 
 ```typescript
-import { RequestContext } from '@struktos/core';
+const app = StruktosApp.create({
+  name: 'my-app',
+  port: 3000,
+  gracefulShutdown: true,
+  useDefaultErrorHandler: true,
+});
 
-async function longRunningTask() {
-  const context = RequestContext.current();
-  
-  // Register cleanup handler
-  context?.onCancel(() => {
-    console.log('Cleaning up resources...');
-    connection.close();
-    cache.clear();
-  });
-  
-  // Check cancellation periodically
-  while (!context?.isCancelled()) {
-    await processChunk();
+// Add middleware
+app.use(loggingMiddleware);
+app.use(authMiddleware);
+app.use(routerMiddleware);
+
+// Add exception filters
+app.useExceptionFilter(new ValidationExceptionFilter());
+
+// Start
+await app.listen(adapter, 3000);
+```
+
+### IStruktosMiddleware
+
+ASP.NET Core-inspired middleware with `invoke(ctx, next)` pattern.
+
+```typescript
+import { IStruktosMiddleware, MiddlewareContext, NextFunction } from '@struktos/core';
+
+class LoggingMiddleware implements IStruktosMiddleware {
+  async invoke(ctx: MiddlewareContext, next: NextFunction): Promise<void> {
+    const start = Date.now();
+    console.log(`→ ${ctx.request.method} ${ctx.request.path}`);
+    
+    await next(); // Call next middleware
+    
+    const duration = Date.now() - start;
+    console.log(`← ${ctx.response.status} (${duration}ms)`);
   }
 }
 
-// Trigger cancellation (e.g., when client disconnects)
-req.on('close', () => {
-  const context = RequestContext.current();
-  context?.cancel(); // All registered callbacks execute
+// Or use functional style
+const loggingMiddleware = createMiddleware(async (ctx, next) => {
+  console.log(`${ctx.request.method} ${ctx.request.path}`);
+  await next();
 });
 ```
 
-### High-Performance Caching
+### IExceptionFilter
 
-LRU cache with TTL support for auth tokens, permissions, and frequently accessed data:
+Handle exceptions and transform them into responses.
 
 ```typescript
-import { CacheManager } from '@struktos/core';
+import { 
+  IExceptionFilter, 
+  ExceptionContext, 
+  StruktosResponse,
+  HttpException 
+} from '@struktos/core';
 
-const userCache = new CacheManager<string, User>(1000); // capacity: 1000
-
-async function getUser(userId: string): Promise<User> {
-  return userCache.getOrSet(
-    userId,
-    async () => {
-      // This only executes on cache miss
-      return await db.users.findById(userId);
-    },
-    60000 // TTL: 60 seconds
-  );
+class CustomExceptionFilter implements IExceptionFilter {
+  async catch(ctx: ExceptionContext): Promise<StruktosResponse> {
+    const { error, context, path, timestamp } = ctx;
+    
+    if (error instanceof HttpException) {
+      return {
+        status: error.statusCode,
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          error: error.name,
+          message: error.message,
+          traceId: context.get('traceId'),
+          timestamp: timestamp.toISOString(),
+          path,
+        },
+      };
+    }
+    
+    throw error; // Pass to next filter
+  }
 }
-
-// First call: hits database (~200ms)
-const user1 = await getUser('user-123');
-
-// Second call: hits cache (~0.001ms)
-const user2 = await getUser('user-123');
 ```
 
-## 📚 API Reference
+### Built-in Exceptions
 
-### RequestContext
+```typescript
+import {
+  BadRequestException,
+  UnauthorizedException,
+  ForbiddenException,
+  NotFoundException,
+  ConflictException,
+  ValidationException,
+  TooManyRequestsException,
+  InternalServerException,
+} from '@struktos/core';
 
-**Static Methods:**
-- `RequestContext.run<T>(initialData, callback)` - Create and run a new context
-- `RequestContext.current<T>()` - Get current context (returns undefined if none)
+// Usage
+throw new BadRequestException('Invalid input');
+throw new NotFoundException('User not found');
+throw new ValidationException('Validation failed', {
+  email: ['Invalid email format'],
+  password: ['Password too short'],
+});
+```
 
-**Instance Methods:**
-- `get<K>(key)` - Get value from context
-- `set<K>(key, value)` - Set value in context
-- `isCancelled()` - Check if context is cancelled
-- `onCancel(callback)` - Register cleanup callback
-- `cancel()` - Cancel context and invoke callbacks
-- `getAll()` - Get all context data
+### IAdapter
 
-### CacheManager
+Abstract interface for framework/protocol adapters.
 
-**Constructor:**
-- `new CacheManager<K, V>(capacity)` - Create cache with specified capacity
+```typescript
+interface IAdapter {
+  readonly name: string;
+  readonly protocol: ProtocolType;
+  
+  init(middlewares: IStruktosMiddleware[]): Promise<void>;
+  start(port?: number, host?: string): Promise<ServerInfo>;
+  stop(): Promise<void>;
+  isRunning(): boolean;
+  
+  transformRequest(raw: any): StruktosRequest;
+  transformResponse(response: StruktosResponse, raw: any): void;
+  createContext(raw: any): MiddlewareContext;
+}
+```
 
-**Methods:**
-- `get(key)` - Get cached value
-- `set(key, value)` - Set cached value
-- `has(key)` - Check if key exists
-- `delete(key)` - Remove key from cache
-- `clear()` - Clear all entries
-- `stats()` - Get cache statistics
-- `getOrSet(key, factory, ttl?)` - Get from cache or compute and cache
+### IHost
+
+Multi-adapter hosting for microservices.
+
+```typescript
+import { createHost, StruktosHost } from '@struktos/core';
+
+const host = createHost({
+  name: 'microservice',
+  gracefulShutdown: true,
+  shutdownTimeout: 30000,
+});
+
+host.addAdapter(httpAdapter);
+host.addAdapter(grpcAdapter);
+host.addBackgroundService(healthCheckService);
+
+await host.start();
+```
+
+### Pipeline Utilities
+
+```typescript
+import { 
+  createPipeline, 
+  compose, 
+  branch, 
+  forMethods, 
+  forPaths,
+  withRetry,
+  withTimeout 
+} from '@struktos/core';
+
+// Compose middlewares
+const pipeline = compose(logging, auth, validation);
+
+// Conditional branching
+const authBranch = branch(
+  (ctx) => ctx.request.headers['authorization'] !== undefined,
+  authenticatedMiddleware,
+  publicMiddleware
+);
+
+// Method-specific middleware
+const postOnly = forMethods(['POST', 'PUT'], validationMiddleware);
+
+// Path-specific middleware
+const apiOnly = forPaths(['/api'], rateLimitMiddleware);
+
+// With retry
+const resilientMiddleware = withRetry(externalApiMiddleware, {
+  maxRetries: 3,
+  retryDelay: 1000,
+});
+
+// With timeout
+const timedMiddleware = withTimeout(slowMiddleware, 5000);
+```
+
+### Background Services
+
+```typescript
+import { IntervalService, BackgroundServiceBase } from '@struktos/core';
+
+class HealthCheckService extends IntervalService {
+  readonly name = 'health-check';
+  
+  constructor() {
+    super(30000); // Run every 30 seconds
+  }
+  
+  protected async execute(): Promise<void> {
+    console.log('Health check running...');
+    // Check database, cache, external services, etc.
+  }
+}
+
+app.addService(new HealthCheckService());
+```
 
 ## 🏗️ Architecture
 
-struktos.js is designed around three key principles:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      StruktosApp                            │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Middleware Pipeline                     │   │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │   │
+│  │  │ Timing  │→│ Logging │→│  Auth   │→│ Router  │   │   │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                          ↓                                  │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │            Exception Filter Chain                    │   │
+│  │  ┌────────────┐ ┌────────────┐ ┌────────────┐       │   │
+│  │  │ Validation │→│    HTTP    │→│  Default   │       │   │
+│  │  └────────────┘ └────────────┘ └────────────┘       │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│                       IAdapter                              │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐  │
+│  │  Express  │ │  Fastify  │ │   gRPC    │ │   Kafka   │  │
+│  └───────────┘ └───────────┘ └───────────┘ └───────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
 
-1. **Go-inspired Context Propagation**
-   - Uses Node.js `AsyncLocalStorage` for automatic context flow
-   - No performance overhead
-   - No manual parameter passing
+## 🔌 Adapter Ecosystem
 
-2. **C#-inspired Clean Architecture**
-   - Interface-based design
-   - Framework agnostic core
-   - Easy to test and maintain
+| Adapter | Package | Protocol |
+|---------|---------|----------|
+| Express | `@struktos/adapter-express` | HTTP |
+| Fastify | `@struktos/adapter-fastify` | HTTP |
+| NestJS | `@struktos/adapter-nestjs` | HTTP |
+| gRPC | `@struktos/adapter-grpc` (planned) | gRPC |
+| Kafka | `@struktos/adapter-kafka` (planned) | Message Queue |
+| RabbitMQ | `@struktos/adapter-rabbitmq` (planned) | Message Queue |
 
-3. **Performance First**
-   - Optimized LRU cache implementation
-   - Minimal memory overhead
-   - Production-ready performance
+## 🔄 Context Propagation
 
-## 🔗 Ecosystem
+Go-style context propagation using AsyncLocalStorage.
 
-struktos.js is modular by design:
+```typescript
+import { RequestContext } from '@struktos/core';
 
-- **@struktos/core** (this package) - Core context and caching infrastructure
-- **@struktos/adapter-express** (coming soon) - Express.js integration
-- **@struktos/adapter-fastify** (planned) - Fastify integration
-- **@struktos/auth** (coming soon) - C# Identity-inspired auth system
-- **@struktos/cli** (planned) - Project scaffolding and code generation
+// Context is automatically propagated
+async function businessLogic() {
+  const ctx = RequestContext.current();
+  const traceId = ctx?.get('traceId');
+  const userId = ctx?.get('userId');
+  
+  console.log(`[${traceId}] Processing for user ${userId}`);
+  
+  // Available in all nested async calls
+  await someNestedFunction();
+}
+```
 
-## 📊 Performance
+## 📊 Type Safety
 
-Based on our benchmarks:
+Full TypeScript support with generics:
 
-- **Context Access**: <0.001ms per operation
-- **Cache Hit**: ~200,000x faster than database calls
-- **Memory Overhead**: Minimal (AsyncLocalStorage is highly optimized)
-- **Concurrent Requests**: Properly isolated contexts
+```typescript
+interface MyContextData extends StruktosContextData {
+  tenantId: string;
+  permissions: string[];
+}
 
-## 🤝 Contributing
+const app = StruktosApp.create<MyContextData>();
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+app.use(async (ctx, next) => {
+  // TypeScript knows about tenantId and permissions
+  ctx.context.set('tenantId', 'tenant-123');
+  ctx.context.set('permissions', ['read', 'write']);
+  await next();
+});
+```
+
+## 🤝 Related Packages
+
+- **[@struktos/adapter-express](https://www.npmjs.com/package/@struktos/adapter-express)** - Express adapter
+- **[@struktos/adapter-fastify](https://www.npmjs.com/package/@struktos/adapter-fastify)** - Fastify adapter
+- **[@struktos/adapter-nestjs](https://www.npmjs.com/package/@struktos/adapter-nestjs)** - NestJS adapter
+- **[@struktos/auth](https://www.npmjs.com/package/@struktos/auth)** - Authentication & authorization
+- **[@struktos/logger](https://www.npmjs.com/package/@struktos/logger)** - Structured logging
+- **[@struktos/cli](https://www.npmjs.com/package/@struktos/cli)** - Project scaffolding
 
 ## 📄 License
 
-MIT © struktos.js Team
+MIT © Struktos.js Team
 
 ## 🔗 Links
 
 - [GitHub Repository](https://github.com/struktosjs/core)
-- [Issue Tracker](https://github.com/struktosjs/core/issues)
+- [Documentation](https://struktos.dev)
 - [NPM Package](https://www.npmjs.com/package/@struktos/core)
 
 ---
