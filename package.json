@@ -1,6 +1,6 @@
 {
   "name": "@struktos/core",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "Enterprise-grade Node.js platform with ASP.NET Core-inspired architecture, Go-style context propagation, and high-performance infrastructure",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
