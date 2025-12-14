@@ -5,8 +5,8 @@
  * Provides a structured way to handle and transform exceptions into responses.
  */
 
-import { RequestContext, StruktosContextData } from '../core';
-import { StruktosResponse, HttpStatus, createErrorResponse } from './types';
+import { RequestContext, StruktosContextData } from '../context';
+import { StruktosResponse, HttpStatus, createErrorResponse } from '../../infrastructure/platform/types';
 
 /**
  * Exception context containing error and request information

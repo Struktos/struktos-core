@@ -5,9 +5,9 @@
  * and protocols (Express, Fastify, gRPC, Kafka, RabbitMQ, etc.)
  */
 
-import { StruktosContextData } from '../core';
-import { StruktosRequest, StruktosResponse, ProtocolType } from '../platform/types';
-import { MiddlewareContext, IStruktosMiddleware } from '../platform/middleware';
+import { StruktosContextData } from '../../domain/context';
+import { StruktosRequest, StruktosResponse, ProtocolType } from '../../infrastructure/platform/types';
+import { MiddlewareContext, IStruktosMiddleware } from '../../infrastructure/platform/middleware';
 
 /**
  * Adapter configuration options

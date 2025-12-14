@@ -5,8 +5,8 @@
  * Provides a unified way to configure and run applications.
  */
 
-import { StruktosContextData } from '../core';
-import { IAdapter, ServerInfo } from './adapter';
+import { StruktosContextData } from '../../domain/context';
+import { IAdapter, ServerInfo } from '../ports/adapter';
 
 /**
  * Host configuration options

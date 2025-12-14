@@ -5,20 +5,20 @@
  * Inspired by ASP.NET Core's WebApplication pattern.
  */
 
-import { StruktosContextData } from '../core';
+import { StruktosContextData } from '../../domain/context';
 import { 
   IStruktosMiddleware, 
   MiddlewareFunction, 
   createMiddleware,
   isMiddleware
-} from '../platform/middleware';
+} from '../../infrastructure/platform/middleware';
 import { 
   IExceptionFilter, 
   ExceptionFilterChain, 
   DefaultExceptionFilter,
   ExceptionContext
-} from '../platform/exceptions';
-import { IAdapter, ServerInfo } from './adapter';
+} from '../../domain/exceptions/exceptions';
+import { IAdapter, ServerInfo } from '../ports/adapter';
 import { IHost, StruktosHost, HostOptions, IBackgroundService, ILogger, consoleLogger } from './host';
 
 /**

@@ -16,7 +16,7 @@ export {
   AdapterLifecycle,
   AdapterFactory,
   ServerInfo,
-} from './adapter';
+} from '../ports/adapter';
 
 // Host
 export {

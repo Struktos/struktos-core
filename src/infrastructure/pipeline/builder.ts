@@ -4,7 +4,7 @@
  * Utilities for building and managing middleware pipelines.
  */
 
-import { StruktosContextData } from '../core';
+import { StruktosContextData } from '../../domain/context';
 import { 
   IStruktosMiddleware, 
   MiddlewareFunction, 

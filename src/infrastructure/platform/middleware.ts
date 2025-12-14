@@ -5,7 +5,7 @@
  * Provides a unified middleware abstraction that works across different adapters.
  */
 
-import { RequestContext, StruktosContextData } from '../core';
+import { RequestContext, StruktosContextData } from '../../domain/context';
 import { StruktosRequest, StruktosResponse } from './types';
 
 /**

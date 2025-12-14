@@ -1,87 +1,34 @@
 /**
- * @struktos/core v1.0.0
- * 
- * Enterprise-grade Node.js platform with ASP.NET Core-inspired architecture,
- * Go-style context propagation, and high-performance infrastructure.
- * 
- * @example
- * ```typescript
- * import { 
- *   StruktosApp, 
- *   RequestContext, 
- *   createMiddleware,
- *   HttpException 
- * } from '@struktos/core';
- * 
- * const app = StruktosApp.create();
- * 
- * // Add middleware
- * app.use(async (ctx, next) => {
- *   console.log(`${ctx.request.method} ${ctx.request.path}`);
- *   await next();
- * });
- * 
- * // Start with adapter
- * await app.listen(expressAdapter, 3000);
- * ```
- * 
+ * @fileoverview @struktos/core - Enterprise Node.js Framework
+ * @description
+ * Struktos Core provides enterprise-grade abstractions for building
+ * scalable, maintainable Node.js applications following Hexagonal
+ * Architecture and Domain-Driven Design principles.
+ * * 
+ *
+ * ## Architecture Layers
+ * ... (TSDoc Description Remains Unchanged) ...
+ * * @packageDocumentation
  * @module @struktos/core
+ * @version 1.0.0
  */
 
-// ==================== Core Context System ====================
+// ============================================================================
+// DOMAIN LAYER EXPORTS (Core Abstractions & Rules)
+// ============================================================================
+
+// ** 1. Context System (Domain Core Data Carrier) **
 export { 
   IContext, 
   StruktosContextData, 
-  StruktosContext 
-} from './core';
-
-export { 
+  StruktosContext,
   RequestContext, 
   getCurrentContext, 
   tryGetCurrentContext,
   RequireContext 
-} from './core';
+} from './domain/context';
 
-// ==================== Cache Management ====================
-export { 
-  CacheManager, 
-  CacheStats,
-  globalCache, 
-  createCacheManager 
-} from './cache';
-
-// ==================== Platform Abstractions ====================
-
-// Types
-export {
-  HttpStatus,
-  ProtocolType,
-  StruktosRequest,
-  StruktosResponse,
-  ResponseBuilder,
-  ErrorResponse,
-  response,
-  createErrorResponse,
-} from './platform';
-
-// Middleware
-export {
-  IStruktosMiddleware,
-  MiddlewareFunction,
-  MiddlewareContext,
-  NextFunction,
-  MiddlewareFactory,
-  IServiceProvider,
-  isMiddleware,
-  createMiddleware,
-  StruktosMiddlewareBase,
-  LoggingMiddleware,
-  TimingMiddleware,
-  ErrorHandlingMiddleware,
-  CorsMiddleware,
-} from './platform';
-
-// Exception Handling
+// ** 2. Exception Types (Domain/Business Rules Errors) **
 export {
   IExceptionFilter,
   ExceptionFilterFunction,
@@ -103,25 +50,19 @@ export {
   HttpExceptionFilter,
   ValidationExceptionFilter,
   ExceptionFilterChain,
-} from './platform';
+} from './domain/exceptions';
 
-// ==================== Hosting ====================
 
-// Adapters
-export {
-  IAdapter,
-  IHttpAdapter,
-  IGrpcAdapter,
-  IMessageQueueAdapter,
-  IWebSocketAdapter,
-  AdapterBase,
-  AdapterOptions,
-  AdapterLifecycle,
-  AdapterFactory,
-  ServerInfo,
-} from './hosting';
+/**
+ * Domain layer containing core business rules (Entities, Repositories, UoW, Specifications).
+ */
+export * from './domain'; // Re-exports from all files in './domain'
 
-// Host
+// ============================================================================
+// APPLICATION LAYER EXPORTS (Orchestration & Host)
+// ============================================================================
+
+// ** 1. Hosting / Lifecycle (The Application Runner) **
 export {
   IHost,
   IBackgroundService,
@@ -134,18 +75,61 @@ export {
   IntervalService,
   consoleLogger,
   createHost,
-} from './hosting';
-
-// Application
-export {
   StruktosApp,
   StruktosAppOptions,
   StruktosAppBuilder,
   createApp,
   createAppBuilder,
-} from './hosting';
+} from './application/host';
 
-// ==================== Pipeline ====================
+// ** 2. Ports (Contracts for Infrastructure Adapters) **
+export {
+  IAdapter,
+  IHttpAdapter,
+  IGrpcAdapter,
+  IMessageQueueAdapter,
+  IWebSocketAdapter,
+  AdapterBase,
+  AdapterOptions,
+  AdapterLifecycle,
+  AdapterFactory,
+  ServerInfo,
+} from './application/ports';
+
+
+/**
+ * Application layer containing use case orchestration (CQRS, Handlers, Host).
+ */
+export * from './application'; // Re-exports from all files in './application'
+
+// ============================================================================
+// INFRASTRUCTURE LAYER EXPORTS (External Concerns)
+// ============================================================================
+
+// ** 1. Middleware / Platform Handling **
+export {
+  IStruktosMiddleware,
+  MiddlewareFunction,
+  MiddlewareContext,
+  NextFunction,
+  MiddlewareFactory,
+  IServiceProvider,
+  isMiddleware,
+  createMiddleware,
+  StruktosMiddlewareBase,
+  LoggingMiddleware,
+  TimingMiddleware,
+  ErrorHandlingMiddleware,
+  CorsMiddleware,
+  // Platform specific types
+  ProtocolType,
+  StruktosRequest,
+  StruktosResponse,
+  ResponseBuilder,
+  response,
+} from './infrastructure/platform';
+
+// ** 3. Pipeline **
 export {
   PipelineBuilder,
   createPipeline,
@@ -157,10 +141,39 @@ export {
   parallel,
   withRetry,
   withTimeout,
-} from './pipeline';
+} from './infrastructure/pipeline';
+
+// ** 4. Cache (Specific Infrastructure Adapter) **
+export { 
+  CacheManager, 
+  CacheStats,
+  globalCache, 
+  createCacheManager 
+} from './infrastructure/cache';
+
+
+/**
+ * Infrastructure layer containing external concerns (Platform, Tracing, Resilience).
+ */
+export * from './infrastructure'; // Re-exports from all files in './infrastructure'
+
+// ============================================================================
+// CONVENIENCE RE-EXPORTS (CQRS, UoW, Resilience, Tracing)
+// ============================================================================
+
+// Domain - Unit of Work & Spec
+export type { IUnitOfWork, IUnitOfWorkFactory, TransactionOptions, TransactionResult } from './domain/repository/IUnitOfWork';
+export type { ISpecification, IQueryableSpecification } from './domain/specification/ISpecification';
+
+// Application - CQRS
+export type { ICommand, IQuery, ICommandHandler, IQueryHandler, ICommandBus, IQueryBus, HandlerContext, IPipelineBehavior } from './application/cqrs';
+
+// Infrastructure - Tracing & Resilience
+export type { ITracer, ISpan, TraceContext } from './infrastructure/tracing/ITracer';
+export type { IResiliencePolicy, ICircuitBreakerPolicy, IPolicyBuilder, PolicyExecutionResult } from './infrastructure/resilience/IResiliencePolicy';
+
+// ==================== Default Export ====================
+export { StruktosApp as default } from './application/host';
 
 // ==================== Version ====================
 export const VERSION = '1.0.0';
-
-// ==================== Default Export ====================
-export { StruktosApp as default } from './hosting';
