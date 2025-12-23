@@ -228,15 +228,15 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
     // Start adapter
     const serverInfo = await adapter.start(actualPort, actualHost);
 
-    this.console.log(`🚀 Struktos application started`);
-    this.console.log(
+    console.info(`🚀 Struktos application started`);
+    console.info(
       `   ${serverInfo.protocol.toUpperCase()} server: ${serverInfo.url}`,
     );
 
     // Start background services
     for (const service of this.backgroundServices) {
       await service.start();
-      this.console.log(`   Background service: ${service.name}`);
+      console.info(`   Background service: ${service.name}`);
     }
 
     return serverInfo;
@@ -300,7 +300,7 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
       }
     }
 
-    this.console.log('Application stopped');
+    console.info('Application stopped');
   }
 
   // ==================== Pipeline Building ====================
