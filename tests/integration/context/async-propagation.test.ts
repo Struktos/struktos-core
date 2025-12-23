@@ -54,20 +54,20 @@ describe('Context Propagation - AsyncLocalStorage', () => {
     });
 
     it('should propagate context through multiple promise chains', async () => {
-      const capturedValues: string[] = [];
+      const capturedValues: (string | undefined)[] = [];
 
       await RequestContext.run({ traceId: 'trace-xyz' }, async () => {
         await Promise.resolve()
           .then(() => {
-            capturedValues.push(RequestContext.current()?.get('traceId')!);
+            capturedValues.push(RequestContext.current()?.get('traceId'));
             return Promise.resolve('step1');
           })
           .then(() => {
-            capturedValues.push(RequestContext.current()?.get('traceId')!);
+            capturedValues.push(RequestContext.current()?.get('traceId'));
             return Promise.resolve('step2');
           })
           .then(() => {
-            capturedValues.push(RequestContext.current()?.get('traceId')!);
+            capturedValues.push(RequestContext.current()?.get('traceId'));
             return Promise.resolve('step3');
           });
       });
@@ -418,28 +418,28 @@ describe('Context Propagation - AsyncLocalStorage', () => {
     });
 
     it('should handle deeply nested context scopes', async () => {
-      const capturedValues: string[] = [];
+      const capturedValues: (string | undefined)[] = [];
 
       await RequestContext.run({ level: 'level-1' }, async () => {
-        capturedValues.push(RequestContext.current()?.get('level')!);
+        capturedValues.push(RequestContext.current()?.get('level'));
 
         await RequestContext.run({ level: 'level-2' }, async () => {
-          capturedValues.push(RequestContext.current()?.get('level')!);
+          capturedValues.push(RequestContext.current()?.get('level'));
 
           await RequestContext.run({ level: 'level-3' }, async () => {
-            capturedValues.push(RequestContext.current()?.get('level')!);
+            capturedValues.push(RequestContext.current()?.get('level'));
 
             await RequestContext.run({ level: 'level-4' }, async () => {
-              capturedValues.push(RequestContext.current()?.get('level')!);
+              capturedValues.push(RequestContext.current()?.get('level'));
             });
 
-            capturedValues.push(RequestContext.current()?.get('level')!);
+            capturedValues.push(RequestContext.current()?.get('level'));
           });
 
-          capturedValues.push(RequestContext.current()?.get('level')!);
+          capturedValues.push(RequestContext.current()?.get('level'));
         });
 
-        capturedValues.push(RequestContext.current()?.get('level')!);
+        capturedValues.push(RequestContext.current()?.get('level'));
       });
 
       expect(capturedValues).toEqual([

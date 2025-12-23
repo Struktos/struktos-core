@@ -15,6 +15,7 @@ export {};
 // ============================================================================
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       /**
@@ -37,17 +38,17 @@ declare global {
    * @param timeout Maximum time to wait in ms
    * @param interval Check interval in ms
    */
-  var waitFor: (
+  function waitFor(
     condition: () => boolean,
     timeout?: number,
     interval?: number
-  ) => Promise<void>;
+  ): Promise<void>;
 
   /**
    * Sleep for specified milliseconds
    * @param ms Milliseconds to sleep
    */
-  var sleep: (ms: number) => Promise<void>;
+  function sleep(ms: number): Promise<void>;
 }
 
 // ============================================================================
@@ -120,7 +121,6 @@ expect.extend({
   interval: number = 100
 ): Promise<void> => {
   const startTime = Date.now();
-
   while (!condition()) {
     if (Date.now() - startTime > timeout) {
       throw new Error(`Timeout waiting for condition after ${timeout}ms`);

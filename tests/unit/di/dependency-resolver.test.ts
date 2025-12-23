@@ -188,7 +188,7 @@ class MockServiceProvider implements IDIServiceProvider {
   }
 
   private findServiceTypeByName(name: string): any {
-    for (const [type, descriptor] of this.descriptors.entries()) {
+    for (const type of this.descriptors.keys()) {
       if (type.name === name) {
         return type;
       }
