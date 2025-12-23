@@ -18,23 +18,25 @@
 
 // Core Specification Interfaces
 export {
-  // Main interface
-  ISpecification,
-
   // Base classes for implementation
   SpecificationBase,
   AndSpecification,
   OrSpecification,
   NotSpecification,
 
+  // Factory utilities
+  Specifications,
+} from './ISpecification';
+
+export type {
+  // Main interface
+  ISpecification,
+
   // Queryable specification for database integration
   IQueryableSpecification,
 
   // Visitor pattern for traversal
   ISpecificationVisitor,
-
-  // Factory utilities
-  Specifications,
 
   // Evaluation types
   SpecificationEvaluationOptions,

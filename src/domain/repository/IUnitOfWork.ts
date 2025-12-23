@@ -306,7 +306,7 @@ export interface IUnitOfWork<
    * ```typescript
    * const result = await unitOfWork.commit();
    * if (result.success) {
-   *   logger.info('Transaction committed', {
+   *   console.log('Transaction committed', {
    *     duration: result.duration,
    *     traceId: result.traceId,
    *   });

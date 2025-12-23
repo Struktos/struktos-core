@@ -30,7 +30,7 @@ import type { IQuery, QueryMetadata } from './IQuery';
  *   async execute(command: CreateUserCommand, context: HandlerContext): Promise<User> {
  *     const { traceId, userId } = context;
  *
- *     this.logger.info('Creating user', { traceId, initiatedBy: userId });
+ *     this.console.log('Creating user', { traceId, initiatedBy: userId });
  *
  *     // Check for cancellation
  *     if (context.isCancelled()) {
@@ -147,7 +147,7 @@ export interface HandlerContext<
  *   ) {}
  *
  *   async execute(command: CreateUserCommand, context?: HandlerContext): Promise<User> {
- *     this.logger.info('Creating user', {
+ *     this.console.log('Creating user', {
  *       traceId: context?.traceId,
  *       email: command.email,
  *     });
@@ -476,7 +476,7 @@ export abstract class CommandHandlerBase<
       const result = await this.doExecute(command, context);
 
       const duration = Date.now() - startTime;
-      this.logger.info(`${commandType} completed`, {
+      console.info(`${commandType} completed`, {
         traceId: context?.traceId,
         commandId: commandMetadata?.commandId,
         duration,
@@ -734,11 +734,11 @@ export interface HandlerMetadata {
  *     next: () => Promise<TResponse>
  *   ): Promise<TResponse> {
  *     const requestName = request.constructor.name;
- *     this.logger.info(`Handling ${requestName}`);
+ *     this.console.log(`Handling ${requestName}`);
  *
  *     const response = await next();
  *
- *     this.logger.info(`Handled ${requestName}`);
+ *     this.console.log(`Handled ${requestName}`);
  *     return response;
  *   }
  * }

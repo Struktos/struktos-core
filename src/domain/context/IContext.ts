@@ -176,7 +176,7 @@ export interface IContext<T = any> {
    * const traceId = ctx?.get('traceId');
    *
    * if (traceId) {
-   *   logger.info('Processing request', { traceId });
+   *   console.log('Processing request', { traceId });
    * }
    * ```
    *

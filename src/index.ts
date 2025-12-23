@@ -19,20 +19,20 @@
 
 // ** 1. Context System (Domain Core Data Carrier) **
 export {
-  IContext,
-  StruktosContextData,
-  StruktosContext,
   RequestContext,
   getCurrentContext,
   tryGetCurrentContext,
   RequireContext,
 } from './domain/context';
 
+export type {
+  IContext,
+  StruktosContextData,
+  StruktosContext,
+} from './domain/context';
+
 // ** 2. Exception Types (Domain/Business Rules Errors) **
 export {
-  IExceptionFilter,
-  ExceptionFilterFunction,
-  ExceptionContext,
   createExceptionFilter,
   // Built-in exceptions
   HttpException,
@@ -50,6 +50,12 @@ export {
   HttpExceptionFilter,
   ValidationExceptionFilter,
   ExceptionFilterChain,
+} from './domain/exceptions';
+
+export type {
+  IExceptionFilter,
+  ExceptionFilterFunction,
+  ExceptionContext,
 } from './domain/exceptions';
 
 export type {
@@ -72,32 +78,35 @@ export * from './domain'; // Re-exports from all files in './domain'
 
 // ** 1. Hosting / Lifecycle (The Application Runner) **
 export {
-  IHost,
-  IBackgroundService,
-  ILogger,
-  HostOptions,
-  HostLifecycle,
-  HostStatus,
   StruktosHost,
   BackgroundServiceBase,
   IntervalService,
   consoleLogger,
   createHost,
   StruktosApp,
-  StruktosAppOptions,
   StruktosAppBuilder,
   createApp,
   createAppBuilder,
 } from './application/host';
 
+export type {
+  IHost,
+  IBackgroundService,
+  ILogger,
+  HostOptions,
+  HostLifecycle,
+  HostStatus,
+  StruktosAppOptions,
+} from './application/host';
+
 // ** 2. Ports (Contracts for Infrastructure Adapters) **
-export {
+export { AdapterBase } from './application/ports';
+export type {
   IAdapter,
   IHttpAdapter,
   IGrpcAdapter,
   IMessageQueueAdapter,
   IWebSocketAdapter,
-  AdapterBase,
   AdapterOptions,
   AdapterLifecycle,
   AdapterFactory,
@@ -125,12 +134,6 @@ export * from './application'; // Re-exports from all files in './application'
 
 // ** 1. Middleware / Platform Handling **
 export {
-  IStruktosMiddleware,
-  MiddlewareFunction,
-  MiddlewareContext,
-  NextFunction,
-  MiddlewareFactory,
-  IServiceProvider,
   isMiddleware,
   createMiddleware,
   StruktosMiddlewareBase,
@@ -138,12 +141,21 @@ export {
   TimingMiddleware,
   ErrorHandlingMiddleware,
   CorsMiddleware,
+  ResponseBuilder,
+  response,
+} from './infrastructure/platform';
+
+export type {
+  IStruktosMiddleware,
+  MiddlewareFunction,
+  MiddlewareContext,
+  NextFunction,
+  MiddlewareFactory,
+  IServiceProvider,
   // Platform specific types
   ProtocolType,
   StruktosRequest,
   StruktosResponse,
-  ResponseBuilder,
-  response,
 } from './infrastructure/platform';
 
 // ** 3. Pipeline **
@@ -163,10 +175,11 @@ export {
 // ** 4. Cache (Specific Infrastructure Adapter) **
 export {
   CacheManager,
-  CacheStats,
   globalCache,
   createCacheManager,
 } from './infrastructure/cache';
+
+export type { CacheStats } from './infrastructure/cache';
 
 /**
  * Infrastructure layer containing external concerns (Platform, Tracing, Resilience).

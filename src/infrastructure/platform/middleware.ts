@@ -193,7 +193,7 @@ export class LoggingMiddleware extends StruktosMiddlewareBase {
     const traceId = this.getTraceId(ctx);
 
     if (this.options.logRequest) {
-      console.log(`[${traceId}] → ${ctx.request.method} ${ctx.request.path}`);
+      console.info(`[${traceId}] → ${ctx.request.method} ${ctx.request.path}`);
     }
 
     await next();
@@ -201,7 +201,7 @@ export class LoggingMiddleware extends StruktosMiddlewareBase {
     const duration = Date.now() - start;
 
     if (this.options.logResponse) {
-      console.log(
+      console.info(
         `[${traceId}] ← ${ctx.response.status}${this.options.logDuration ? ` (${duration}ms)` : ''}`,
       );
     }

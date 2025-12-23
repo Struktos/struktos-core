@@ -7,23 +7,20 @@
 // Types
 export {
   HttpStatus,
-  ProtocolType,
-  StruktosRequest,
-  StruktosResponse,
   ResponseBuilder,
-  ErrorResponse,
   response,
   createErrorResponse,
 } from './types';
 
+export type {
+  ProtocolType,
+  StruktosRequest,
+  StruktosResponse,
+  ErrorResponse,
+} from './types';
+
 // Middleware
 export {
-  IStruktosMiddleware,
-  MiddlewareFunction,
-  MiddlewareContext,
-  NextFunction,
-  MiddlewareFactory,
-  IServiceProvider,
   isMiddleware,
   createMiddleware,
   StruktosMiddlewareBase,
@@ -31,4 +28,13 @@ export {
   TimingMiddleware,
   ErrorHandlingMiddleware,
   CorsMiddleware,
+} from './middleware';
+
+export type {
+  IStruktosMiddleware,
+  MiddlewareFunction,
+  MiddlewareContext,
+  NextFunction,
+  MiddlewareFactory,
+  IServiceProvider,
 } from './middleware';

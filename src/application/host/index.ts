@@ -5,27 +5,31 @@
  */
 
 // Adapter
-export {
+export type {
   IAdapter,
   IHttpAdapter,
   IGrpcAdapter,
   IMessageQueueAdapter,
   IWebSocketAdapter,
-  AdapterBase,
   AdapterOptions,
   AdapterLifecycle,
   AdapterFactory,
   ServerInfo,
 } from '../ports/adapter';
 
+export { AdapterBase } from '../ports/adapter';
+
 // Host
-export {
+export type {
   IHost,
   IBackgroundService,
   ILogger,
   HostOptions,
   HostLifecycle,
   HostStatus,
+} from './host';
+
+export {
   StruktosHost,
   BackgroundServiceBase,
   IntervalService,
@@ -36,8 +40,9 @@ export {
 // Application
 export {
   StruktosApp,
-  StruktosAppOptions,
   StruktosAppBuilder,
   createApp,
   createAppBuilder,
 } from './app';
+
+export type { StruktosAppOptions } from './app';

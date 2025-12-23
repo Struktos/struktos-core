@@ -282,7 +282,7 @@ export class StruktosHost<
     }
 
     this._status = 'starting';
-    this.logger.info(`Starting host: ${this.name}`);
+    this.console.log(`Starting host: ${this.name}`);
 
     try {
       // Setup graceful shutdown
@@ -296,7 +296,7 @@ export class StruktosHost<
       // Start all adapters
       const serverInfos = await Promise.all(
         this.adapters.map(async (adapter) => {
-          this.logger.info(`Starting adapter: ${adapter.name}`);
+          this.console.log(`Starting adapter: ${adapter.name}`);
           return adapter.start();
         }),
       );
@@ -304,13 +304,13 @@ export class StruktosHost<
       // Start background services
       await Promise.all(
         this.backgroundServices.map(async (service) => {
-          this.logger.info(`Starting service: ${service.name}`);
+          this.console.log(`Starting service: ${service.name}`);
           await service.start();
         }),
       );
 
       this._status = 'running';
-      this.logger.info(`Host ${this.name} started successfully`);
+      this.console.log(`Host ${this.name} started successfully`);
 
       return serverInfos;
     } catch (error) {
@@ -326,7 +326,7 @@ export class StruktosHost<
     }
 
     this._status = 'stopping';
-    this.logger.info(`Stopping host: ${this.name}`);
+    this.console.log(`Stopping host: ${this.name}`);
 
     const timeout = this.options.shutdownTimeout ?? 30000;
 
@@ -341,7 +341,7 @@ export class StruktosHost<
 
       await this.onStop?.();
       this._status = 'stopped';
-      this.logger.info(`Host ${this.name} stopped successfully`);
+      this.console.log(`Host ${this.name} stopped successfully`);
     } catch (error) {
       this.logger.error(`Error during shutdown: ${(error as Error).message}`);
       this._status = 'error';
@@ -352,7 +352,7 @@ export class StruktosHost<
     // Stop background services first
     await Promise.all(
       this.backgroundServices.map(async (service) => {
-        this.logger.info(`Stopping service: ${service.name}`);
+        this.console.log(`Stopping service: ${service.name}`);
         await service.stop();
       }),
     );
@@ -360,7 +360,7 @@ export class StruktosHost<
     // Then stop adapters
     await Promise.all(
       this.adapters.map(async (adapter) => {
-        this.logger.info(`Stopping adapter: ${adapter.name}`);
+        this.console.log(`Stopping adapter: ${adapter.name}`);
         await adapter.stop();
       }),
     );
@@ -368,7 +368,7 @@ export class StruktosHost<
 
   private setupGracefulShutdown(): void {
     const shutdown = async (signal: string) => {
-      this.logger.info(`Received ${signal}, initiating graceful shutdown...`);
+      this.console.log(`Received ${signal}, initiating graceful shutdown...`);
       await this.stop();
       process.exit(0);
     };

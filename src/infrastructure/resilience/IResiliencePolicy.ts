@@ -593,7 +593,7 @@ export interface RetryPolicyOptions {
  *   minimumThroughput: 10,
  *   breakDuration: 30000,
  *   onStateChange: (from, to) => {
- *     logger.info(`Circuit ${from} -> ${to}`);
+ *     console.log(`Circuit ${from} -> ${to}`);
  *   },
  * };
  * ```

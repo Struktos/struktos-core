@@ -48,32 +48,38 @@
 
 // Command abstractions
 export {
+  // Base class
+  CommandBase,
+  // DI Token
+  COMMAND_BUS_TOKEN,
+} from './ICommand';
+
+export type {
   // Interfaces
   ICommand,
   ICommandBus,
   ICommandHandler,
 
-  // Base class
-  CommandBase,
-
   // Types
   CommandMetadata,
   CommandExecutionOptions,
   CommandResult,
-
-  // DI Token
-  COMMAND_BUS_TOKEN,
 } from './ICommand';
 
 // Query abstractions
 export {
+  // Base class
+  QueryBase,
+
+  // DI Token
+  QUERY_BUS_TOKEN,
+} from './IQuery';
+
+export type {
   // Interfaces
   IQuery,
   IQueryBus,
   IQueryHandler,
-
-  // Base class
-  QueryBase,
 
   // Types
   QueryMetadata,
@@ -81,27 +87,27 @@ export {
   QueryResult,
   PaginationParams,
   PaginatedResult,
-
-  // DI Token
-  QUERY_BUS_TOKEN,
 } from './IQuery';
 
 // Handler abstractions and pipeline
 export {
-  // Handler context
-  HandlerContext,
-
   // Base classes
   CommandHandlerBase,
   QueryHandlerBase,
-
-  // Pipeline behavior
-  IPipelineBehavior,
-  HandlerMetadata,
-  IHandlerLogger,
 
   // DI Tokens
   COMMAND_HANDLERS_TOKEN,
   QUERY_HANDLERS_TOKEN,
   PIPELINE_BEHAVIORS_TOKEN,
+} from './IHandler';
+
+// Handler abstractions and pipeline
+export type {
+  // Handler context
+  HandlerContext,
+
+  // Pipeline behavior
+  IPipelineBehavior,
+  HandlerMetadata,
+  IHandlerLogger,
 } from './IHandler';

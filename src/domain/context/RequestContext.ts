@@ -244,7 +244,7 @@ interface ContextStore {
  *   const ctx = RequestContext.current();
  *   const traceId = ctx?.get('traceId');
  *
- *   logger.info('Fetching users', { traceId });
+ *   console.log('Fetching users', { traceId });
  *   const users = await fetchUsers();
  *
  *   res.json({ users, traceId });
@@ -664,7 +664,7 @@ export class RequestContext<
    *   const ctx = RequestContext.current();
    *   const traceId = ctx?.get('traceId');
    *
-   *   logger.info('Fetching user', { userId, traceId });
+   *   console.log('Fetching user', { userId, traceId });
    *   return db.users.findById(userId);
    * }
    * ```
@@ -676,13 +676,13 @@ export class RequestContext<
    *
    *   if (!ctx) {
    *     // Not in a request context - maybe a background job?
-   *     logger.info('Operation without context');
+   *     console.log('Operation without context');
    *     return;
    *   }
    *
    *   const traceId = ctx.get('traceId');
    *   const userId = ctx.get('userId');
-   *   logger.info('Request', { traceId, userId });
+   *   console.log('Request', { traceId, userId });
    * }
    * ```
    *
@@ -739,9 +739,9 @@ export class RequestContext<
    *   if (RequestContext.hasContext()) {
    *     const ctx = RequestContext.current();
    *     const traceId = ctx?.get('traceId');
-   *     logger.info(message, { traceId });
+   *     console.log(message, { traceId });
    *   } else {
-   *     logger.info(message);
+   *     console.log(message);
    *   }
    * }
    * ```
@@ -1172,13 +1172,13 @@ export function getCurrentContext<
  *
  *   if (ctx) {
  *     // In a request context - include metadata
- *     logger.info(message, {
+ *     console.log(message, {
  *       traceId: ctx.get('traceId'),
  *       userId: ctx.get('userId'),
  *     });
  *   } else {
  *     // Not in a request context - basic logging
- *     logger.info(message);
+ *     console.log(message);
  *   }
  * }
  * ```
@@ -1189,7 +1189,7 @@ export function getCurrentContext<
  *   // Background jobs might not have request context
  *   const ctx = tryGetCurrentContext();
  *
- *   logger.info('Processing job', {
+ *   console.log('Processing job', {
  *     jobId,
  *     traceId: ctx?.get('traceId') || 'background',
  *   });

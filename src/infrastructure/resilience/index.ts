@@ -54,14 +54,20 @@
  */
 
 export {
+  // Enums
+  PolicyResult,
+  CircuitState,
+
+  // DI Tokens
+  RESILIENCE_POLICY_TOKEN,
+  POLICY_BUILDER_TOKEN,
+} from './IResiliencePolicy';
+
+export type {
   // Core interfaces
   IResiliencePolicy,
   ICircuitBreakerPolicy,
   IPolicyBuilder,
-
-  // Enums
-  PolicyResult,
-  CircuitState,
 
   // Execution types
   PolicyExecutionContext,
@@ -78,8 +84,4 @@ export {
   // Event handling
   PolicyEvent,
   PolicyEventListener,
-
-  // DI Tokens
-  RESILIENCE_POLICY_TOKEN,
-  POLICY_BUILDER_TOKEN,
 } from './IResiliencePolicy';

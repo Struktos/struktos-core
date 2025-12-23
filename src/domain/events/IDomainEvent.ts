@@ -1831,7 +1831,7 @@ export interface IEventBus {
  *   ) {}
  *
  *   async handle(event: OrderCreatedEvent): Promise<void> {
- *     this.logger.info('Sending order confirmation', {
+ *     this.console.log('Sending order confirmation', {
  *       orderId: event.payload.orderId,
  *       customerEmail: event.payload.customerEmail,
  *     });
@@ -1847,7 +1847,7 @@ export interface IEventBus {
  *       },
  *     });
  *
- *     this.logger.info('Order confirmation sent', {
+ *     this.console.log('Order confirmation sent', {
  *       orderId: event.payload.orderId,
  *     });
  *   }
@@ -1937,7 +1937,7 @@ export interface IEventHandler<TEvent extends IDomainEvent> {
    *     const { orderId, customerEmail, items, total } = event.payload;
    *
    *     // Log handling
-   *     this.logger.info('Sending order confirmation', {
+   *     this.console.log('Sending order confirmation', {
    *       eventId: event.metadata.eventId,
    *       orderId,
    *       customerEmail,
@@ -1952,7 +1952,7 @@ export interface IEventHandler<TEvent extends IDomainEvent> {
    *         data: { orderId, items, total },
    *       });
    *
-   *       this.logger.info('Order confirmation sent successfully', {
+   *       this.console.log('Order confirmation sent successfully', {
    *         eventId: event.metadata.eventId,
    *         orderId,
    *       });

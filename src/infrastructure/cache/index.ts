@@ -4,9 +4,6 @@
  * High-performance caching utilities
  */
 
-export {
-  CacheManager,
-  CacheStats,
-  globalCache,
-  createCacheManager,
-} from './CacheManager';
+export { CacheManager, globalCache, createCacheManager } from './CacheManager';
+
+export type { CacheStats } from './CacheManager';

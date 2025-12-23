@@ -5,15 +5,16 @@
  */
 
 // Adapter
-export {
+export type {
   IAdapter,
   IHttpAdapter,
   IGrpcAdapter,
   IMessageQueueAdapter,
   IWebSocketAdapter,
-  AdapterBase,
   AdapterOptions,
   AdapterLifecycle,
   AdapterFactory,
   ServerInfo,
 } from './adapter';
+
+export { AdapterBase } from './adapter';

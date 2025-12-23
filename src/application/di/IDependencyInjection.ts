@@ -37,7 +37,7 @@
  *   private logger = new ConsoleLogger();  // Hard-coded dependency
  *
  *   async getUser(id: string) {
- *     this.logger.info('Fetching user');
+ *     this.console.log('Fetching user');
  *     return this.db.users.findById(id);
  *   }
  * }
@@ -60,7 +60,7 @@
  *   ) {}
  *
  *   async getUser(id: string) {
- *     this.logger.info('Fetching user');
+ *     this.console.log('Fetching user');
  *     return this.db.users.findById(id);
  *   }
  * }
@@ -367,7 +367,7 @@
  *       const logger = scope.getServiceProvider().getService(RequestLogger);
  *
  *       // Logger has access to RequestContext.current()
- *       logger.info('Processing request');  // Includes traceId automatically
+ *       console.log('Processing request');  // Includes traceId automatically
  *
  *       // Process request
  *       await handleRequest(req, res, dbContext);
@@ -1478,7 +1478,7 @@ export interface IDIServiceProvider {
    * @example Resolving singleton services
    * ```typescript
    * const logger = provider.getService(ILogger);
-   * logger.info('Application started');
+   * console.log('Application started');
    *
    * const config = provider.getService(IConfig);
    * console.log('Database URL:', config.databaseUrl);
@@ -2160,7 +2160,7 @@ export function Injectable(options: { scope: ServiceScope }): ClassDecorator {
  *   ) {}
  *
  *   async createOrder(data: CreateOrderData): Promise<Order> {
- *     this.logger.info('Creating order');
+ *     this.console.log('Creating order');
  *     const order = await this.db.orders.create(data);
  *     await this.eventBus.publish(new OrderCreatedEvent(order));
  *     return order;

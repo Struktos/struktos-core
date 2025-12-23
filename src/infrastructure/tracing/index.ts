@@ -52,14 +52,20 @@
  */
 
 export {
+  // Enums
+  SpanStatus,
+  SpanKind,
+
+  // DI Tokens
+  TRACER_TOKEN,
+  TRACER_FACTORY_TOKEN,
+} from './ITracer';
+
+export type {
   // Core interfaces
   ITracer,
   ISpan,
   ITracerFactory,
-
-  // Enums
-  SpanStatus,
-  SpanKind,
 
   // Types
   TraceContext,
@@ -69,8 +75,4 @@ export {
   SpanLink,
   TracerOptions,
   SamplerConfig,
-
-  // DI Tokens
-  TRACER_TOKEN,
-  TRACER_FACTORY_TOKEN,
 } from './ITracer';

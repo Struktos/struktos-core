@@ -11,20 +11,22 @@
 
 // Unit of Work Pattern
 export {
-  // Main interfaces
-  IUnitOfWork,
-  IUnitOfWorkFactory,
-
   // Enums
   IsolationLevel,
   TransactionState,
+
+  // DI Tokens
+  UNIT_OF_WORK_TOKEN,
+  UNIT_OF_WORK_FACTORY_TOKEN,
+} from './IUnitOfWork';
+
+export type {
+  // Main interfaces
+  IUnitOfWork,
+  IUnitOfWorkFactory,
 
   // Types
   TransactionOptions,
   TransactionResult,
   RepositoryToken,
-
-  // DI Tokens
-  UNIT_OF_WORK_TOKEN,
-  UNIT_OF_WORK_FACTORY_TOKEN,
 } from './IUnitOfWork';

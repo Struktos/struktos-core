@@ -6,9 +6,6 @@
 
 // Exceptions
 export {
-  IExceptionFilter,
-  ExceptionFilterFunction,
-  ExceptionContext,
   createExceptionFilter,
   // Built-in exceptions
   HttpException,
@@ -26,4 +23,10 @@ export {
   HttpExceptionFilter,
   ValidationExceptionFilter,
   ExceptionFilterChain,
+} from './exceptions';
+
+export type {
+  IExceptionFilter,
+  ExceptionFilterFunction,
+  ExceptionContext,
 } from './exceptions';
