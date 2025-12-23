@@ -1,348 +1,518 @@
 #!/bin/bash
 
 #===============================================================================
-# @struktos/core - Release Script
+# @struktos/core - Manual Release Script
 # 
-# This script automates the release process:
-# 1. Validates the environment
-# 2. Runs tests and builds
-# 3. Creates a Git tag
-# 4. Pushes to GitHub with release notes
-# 5. Publishes to npm
+# This script automates the manual release process with comprehensive checks:
+# 1. Pre-flight validation (git status, npm login, test coverage)
+# 2. Version management (patch/minor/major)
+# 3. Automated testing and building
+# 4. Git tagging and pushing
+# 5. GitHub Release creation
+# 6. npm publishing with provenance
 #
 # Usage:
-#   ./scripts/release.sh [patch|minor|major]
-#   ./scripts/release.sh              # Uses version from package.json
-#   ./scripts/release.sh patch        # Bumps patch version (0.1.0 -> 0.1.1)
-#   ./scripts/release.sh minor        # Bumps minor version (0.1.0 -> 0.2.0)
-#   ./scripts/release.sh major        # Bumps major version (0.1.0 -> 1.0.0)
+#   ./scripts/release.sh                    # Interactive mode
+#   ./scripts/release.sh patch              # Bump patch version (1.0.0 -> 1.0.1)
+#   ./scripts/release.sh minor              # Bump minor version (1.0.0 -> 1.1.0)
+#   ./scripts/release.sh major              # Bump major version (1.0.0 -> 2.0.0)
+#   ./scripts/release.sh --dry-run patch    # Test without publishing
 #
 # Requirements:
-#   - git
-#   - npm (logged in)
+#   - git (clean working directory)
+#   - npm (logged in with publishing rights)
 #   - gh (GitHub CLI, logged in)
+#   - Node.js 18+
 #===============================================================================
 
-set -e  # Exit on error
+set -e  # Exit immediately on error
+set -u  # Treat unset variables as errors
+set -o pipefail  # Pipe failures propagate
 
-# Colors for output
+# ============================================================================
+# ANSI Color Codes
+# ============================================================================
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'  # No Color
 
-# Print functions
-info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+# ============================================================================
+# Logging Functions
+# ============================================================================
 
-#===============================================================================
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+log_step() {
+    echo -e "\n${CYAN}${BOLD}▶ $1${NC}\n"
+}
+
+log_fatal() {
+    log_error "$1"
+    exit 1
+}
+
+# ============================================================================
 # Configuration
-#===============================================================================
+# ============================================================================
 
 PACKAGE_NAME="@struktos/core"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 CHANGELOG_FILE="$PROJECT_DIR/CHANGELOG.md"
+PACKAGE_JSON="$PROJECT_DIR/package.json"
 
-#===============================================================================
-# Pre-flight Checks
-#===============================================================================
+DRY_RUN=false
+VERSION_BUMP=""
 
-preflight_checks() {
-    info "Running pre-flight checks..."
+# ============================================================================
+# Parse Arguments
+# ============================================================================
 
-    # Check if we're in a git repository
-    if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-        error "Not a git repository"
-    fi
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --dry-run)
+                DRY_RUN=true
+                log_warn "Running in DRY-RUN mode (no actual publishing)"
+                shift
+                ;;
+            patch|minor|major)
+                VERSION_BUMP=$1
+                shift
+                ;;
+            --help|-h)
+                cat << EOF
+Usage: $0 [OPTIONS] [VERSION_BUMP]
 
-    # Check for uncommitted changes
-    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-        error "You have uncommitted changes. Please commit or stash them first."
-    fi
+Options:
+    --dry-run       Run without actually publishing
+    --help, -h      Show this help message
 
-    # Check if npm is logged in
-    if ! npm whoami > /dev/null 2>&1; then
-        error "Not logged in to npm. Run 'npm login' first."
-    fi
+Version Bump:
+    patch           Bump patch version (1.0.0 -> 1.0.1)
+    minor           Bump minor version (1.0.0 -> 1.1.0)
+    major           Bump major version (1.0.0 -> 2.0.0)
+    (none)          Interactive selection
 
-    # Check if gh CLI is installed and authenticated
-    if ! command -v gh &> /dev/null; then
-        error "GitHub CLI (gh) is not installed. Install it from https://cli.github.com/"
-    fi
-
-    if ! gh auth status > /dev/null 2>&1; then
-        error "Not logged in to GitHub CLI. Run 'gh auth login' first."
-    fi
-
-    # Check if on main/master branch
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "$CURRENT_BRANCH" != "main" && "$CURRENT_BRANCH" != "master" ]]; then
-        warn "You are on branch '$CURRENT_BRANCH', not main/master."
-        read -p "Continue anyway? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-    fi
-
-    success "Pre-flight checks passed"
+Examples:
+    $0                    # Interactive mode
+    $0 patch              # Release patch version
+    $0 --dry-run major    # Test major release without publishing
+EOF
+                exit 0
+                ;;
+            *)
+                log_fatal "Unknown argument: $1. Use --help for usage."
+                ;;
+        esac
+    done
 }
 
-#===============================================================================
+# ============================================================================
+# Pre-flight Checks
+# ============================================================================
+
+check_git_repository() {
+    log_step "1/10: Checking Git Repository"
+    
+    if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        log_fatal "Not a git repository"
+    fi
+    
+    log_success "Git repository confirmed"
+}
+
+check_uncommitted_changes() {
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+        log_fatal "You have uncommitted changes. Please commit or stash them first."
+    fi
+    
+    log_success "Working directory is clean"
+}
+
+check_current_branch() {
+    local current_branch=$(git rev-parse --abbrev-ref HEAD)
+    
+    if [[ "$current_branch" != "main" && "$current_branch" != "master" ]]; then
+        log_warn "You are on branch '$current_branch', not main/master."
+        
+        if [ "$DRY_RUN" = false ]; then
+            read -p "Continue anyway? (y/N) " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                log_fatal "Release cancelled by user"
+            fi
+        fi
+    else
+        log_success "On main/master branch"
+    fi
+}
+
+check_npm_login() {
+    log_step "2/10: Checking npm Authentication"
+    
+    if ! npm whoami > /dev/null 2>&1; then
+        log_fatal "Not logged in to npm. Run 'npm login' first."
+    fi
+    
+    local npm_user=$(npm whoami)
+    log_success "Logged in to npm as: $npm_user"
+}
+
+check_github_cli() {
+    log_step "3/10: Checking GitHub CLI"
+    
+    if ! command -v gh &> /dev/null; then
+        log_fatal "GitHub CLI (gh) is not installed. Install from https://cli.github.com/"
+    fi
+    
+    if ! gh auth status > /dev/null 2>&1; then
+        log_fatal "Not logged in to GitHub CLI. Run 'gh auth login' first."
+    fi
+    
+    local gh_user=$(gh api user --jq '.login')
+    log_success "Logged in to GitHub as: $gh_user"
+}
+
+check_node_version() {
+    local node_version=$(node --version | cut -d'v' -f2)
+    local major_version=$(echo "$node_version" | cut -d'.' -f1)
+    
+    if [ "$major_version" -lt 18 ]; then
+        log_fatal "Node.js 18+ required. Current version: $node_version"
+    fi
+    
+    log_success "Node.js version: $node_version"
+}
+
+# ============================================================================
 # Version Management
-#===============================================================================
+# ============================================================================
 
 get_current_version() {
-    node -p "require('./package.json').version"
+    node -p "require('$PACKAGE_JSON').version"
+}
+
+select_version_bump() {
+    log_step "4/10: Select Version Bump"
+    
+    if [ -z "$VERSION_BUMP" ]; then
+        local current_version=$(get_current_version)
+        
+        echo "Current version: $current_version"
+        echo ""
+        echo "Select version bump:"
+        echo "  1) patch  (${current_version} → $(npm version patch --no-git-tag-version --allow-same-version 2>/dev/null && get_current_version; git checkout -- package.json package-lock.json))"
+        echo "  2) minor  (${current_version} → $(npm version minor --no-git-tag-version --allow-same-version 2>/dev/null && get_current_version; git checkout -- package.json package-lock.json))"
+        echo "  3) major  (${current_version} → $(npm version major --no-git-tag-version --allow-same-version 2>/dev/null && get_current_version; git checkout -- package.json package-lock.json))"
+        echo ""
+        
+        read -p "Enter choice (1-3): " choice
+        
+        case $choice in
+            1) VERSION_BUMP="patch" ;;
+            2) VERSION_BUMP="minor" ;;
+            3) VERSION_BUMP="major" ;;
+            *) log_fatal "Invalid choice: $choice" ;;
+        esac
+    fi
+    
+    log_success "Selected version bump: $VERSION_BUMP"
 }
 
 bump_version() {
-    local bump_type=$1
-    local current_version=$(get_current_version)
+    local old_version=$(get_current_version)
     
-    IFS='.' read -r major minor patch <<< "$current_version"
-    
-    case $bump_type in
-        major)
-            major=$((major + 1))
-            minor=0
-            patch=0
-            ;;
-        minor)
-            minor=$((minor + 1))
-            patch=0
-            ;;
-        patch)
-            patch=$((patch + 1))
-            ;;
-        *)
-            error "Invalid bump type: $bump_type"
-            ;;
-    esac
-    
-    echo "$major.$minor.$patch"
-}
-
-update_package_version() {
-    local new_version=$1
-    
-    # Update package.json
-    npm version "$new_version" --no-git-tag-version --allow-same-version
-    
-    success "Updated package.json to version $new_version"
-}
-
-#===============================================================================
-# Build & Test
-#===============================================================================
-
-build_package() {
-    info "Building package..."
-    
-    cd "$PROJECT_DIR"
-    
-    # Clean previous build
-    rm -rf dist
-    
-    # Install dependencies if needed
-    if [ ! -d "node_modules" ]; then
-        info "Installing dependencies..."
-        npm install
+    if [ "$DRY_RUN" = false ]; then
+        npm version "$VERSION_BUMP" --no-git-tag-version
+    else
+        npm version "$VERSION_BUMP" --no-git-tag-version
+        # Revert changes in dry-run
+        git checkout -- package.json package-lock.json
     fi
     
-    # Run build
-    npm run build
+    local new_version=$(get_current_version)
     
-    success "Build completed"
+    log_success "Version: $old_version → $new_version"
+    
+    echo "$new_version"
 }
+
+# ============================================================================
+# Testing & Building
+# ============================================================================
 
 run_tests() {
-    info "Running tests..."
+    log_step "5/10: Running Test Suite"
     
-    cd "$PROJECT_DIR"
+    log_info "Installing dependencies..."
+    npm ci > /dev/null
     
-    # Check if test script exists
-    if npm run test --if-present 2>/dev/null; then
-        success "Tests passed"
-    else
-        warn "No tests configured, skipping..."
-    fi
+    log_info "Running linter..."
+    npm run lint
+    
+    log_info "Running type check..."
+    npm run build
+    
+    log_info "Running unit tests..."
+    npm run test:unit
+    
+    log_info "Running integration tests..."
+    npm run test:integration
+    
+    log_info "Checking coverage threshold..."
+    npm run test:coverage
+    
+    log_success "All tests passed"
 }
 
-#===============================================================================
+build_package() {
+    log_step "6/10: Building Package"
+    
+    log_info "Compiling TypeScript..."
+    npm run build
+    
+    log_info "Verifying build output..."
+    
+    if [ ! -f "dist/index.js" ]; then
+        log_fatal "Build failed: dist/index.js not found"
+    fi
+    
+    if [ ! -f "dist/index.d.ts" ]; then
+        log_fatal "Build failed: dist/index.d.ts not found"
+    fi
+    
+    log_success "Package built successfully"
+}
+
+# ============================================================================
 # Git Operations
-#===============================================================================
+# ============================================================================
+
+commit_version_bump() {
+    log_step "7/10: Committing Version Bump"
+    
+    local new_version="$1"
+    
+    if [ "$DRY_RUN" = false ]; then
+        git add package.json package-lock.json
+        git commit -m "chore(release): bump version to $new_version"
+        
+        log_success "Committed version bump"
+    else
+        log_warn "[DRY-RUN] Would commit: chore(release): bump version to $new_version"
+    fi
+}
 
 create_git_tag() {
-    local version=$1
+    log_step "8/10: Creating Git Tag"
+    
+    local version="$1"
     local tag="v$version"
     
-    info "Creating git tag: $tag"
-    
-    # Check if tag already exists
-    if git rev-parse "$tag" > /dev/null 2>&1; then
-        error "Tag $tag already exists"
+    if [ "$DRY_RUN" = false ]; then
+        git tag -a "$tag" -m "Release $tag"
+        log_success "Created tag: $tag"
+    else
+        log_warn "[DRY-RUN] Would create tag: $tag"
     fi
-    
-    # Commit version bump if there are changes
-    if ! git diff-index --quiet HEAD -- package.json 2>/dev/null; then
-        git add package.json package-lock.json 2>/dev/null || true
-        git commit -m "chore: bump version to $version"
-    fi
-    
-    # Create annotated tag
-    git tag -a "$tag" -m "Release $version"
-    
-    success "Created tag: $tag"
 }
 
-push_to_github() {
-    local version=$1
+push_to_remote() {
+    log_step "9/10: Pushing to Remote"
+    
+    local version="$1"
     local tag="v$version"
     
-    info "Pushing to GitHub..."
-    
-    # Push commits and tags
-    git push origin HEAD
-    git push origin "$tag"
-    
-    success "Pushed to GitHub"
+    if [ "$DRY_RUN" = false ]; then
+        git push origin main
+        git push origin "$tag"
+        
+        log_success "Pushed commits and tag to remote"
+    else
+        log_warn "[DRY-RUN] Would push: commits and tag $tag"
+    fi
 }
 
-#===============================================================================
+# ============================================================================
 # GitHub Release
-#===============================================================================
+# ============================================================================
 
 extract_changelog() {
-    local version=$1
-    local changelog_content=""
+    local version="$1"
     
-    if [ -f "$CHANGELOG_FILE" ]; then
-        # Extract the section for this version from CHANGELOG.md
-        changelog_content=$(awk -v ver="$version" '
-            /^## \[/ {
-                if (found) exit
-                if (index($0, ver)) found=1
-            }
-            found && !/^## \[/ { print }
-        ' "$CHANGELOG_FILE")
+    if [ ! -f "$CHANGELOG_FILE" ]; then
+        echo "Release v$version"
+        return
     fi
     
-    if [ -z "$changelog_content" ]; then
-        changelog_content="Release $version of $PACKAGE_NAME
-
-See [CHANGELOG.md](CHANGELOG.md) for details."
-    fi
-    
-    echo "$changelog_content"
+    # Extract changelog section for this version
+    awk "/## \[$version\]/,/## \[/" "$CHANGELOG_FILE" | head -n -1 | tail -n +2
 }
 
 create_github_release() {
-    local version=$1
+    log_step "10/10: Creating GitHub Release"
+    
+    local version="$1"
     local tag="v$version"
     
-    info "Creating GitHub release..."
+    local changelog=$(extract_changelog "$version")
     
-    # Extract release notes from CHANGELOG
-    local release_notes=$(extract_changelog "$version")
+    if [ -z "$changelog" ]; then
+        changelog="Release $tag
+
+See https://github.com/struktos/core/compare/...v${tag} for full changelog."
+    fi
     
-    # Create GitHub release
-    gh release create "$tag" \
-        --title "Release $version" \
-        --notes "$release_notes" \
-        --verify-tag
-    
-    success "Created GitHub release: $tag"
+    if [ "$DRY_RUN" = false ]; then
+        echo "$changelog" | gh release create "$tag" \
+            --title "$tag" \
+            --notes-file - \
+            --latest
+        
+        log_success "Created GitHub Release: $tag"
+    else
+        log_warn "[DRY-RUN] Would create GitHub Release: $tag"
+    fi
 }
 
-#===============================================================================
-# NPM Publish
-#===============================================================================
+# ============================================================================
+# npm Publishing
+# ============================================================================
 
 publish_to_npm() {
-    local version=$1
+    local version="$1"
     
-    info "Publishing to npm..."
-    
-    cd "$PROJECT_DIR"
-    
-    # Check if this version already exists on npm
-    if npm view "$PACKAGE_NAME@$version" version > /dev/null 2>&1; then
-        error "Version $version already exists on npm"
+    if [ "$DRY_RUN" = false ]; then
+        log_info "Publishing to npm with provenance..."
+        npm publish --provenance --access public
+        
+        # Wait for propagation
+        sleep 10
+        
+        # Verify
+        local published_version=$(npm view "$PACKAGE_NAME" version)
+        
+        if [ "$published_version" = "$version" ]; then
+            log_success "Successfully published $PACKAGE_NAME@$version to npm"
+        else
+            log_fatal "Failed to verify npm publication. Expected: $version, Got: $published_version"
+        fi
+    else
+        log_warn "[DRY-RUN] Would publish to npm: $PACKAGE_NAME@$version"
     fi
-    
-    # Publish with public access (for scoped packages)
-    npm publish --access public
-    
-    success "Published $PACKAGE_NAME@$version to npm"
 }
 
-#===============================================================================
-# Main
-#===============================================================================
+# ============================================================================
+# Rollback
+# ============================================================================
+
+rollback_on_error() {
+    local version="$1"
+    local tag="v$version"
+    
+    log_error "Release failed! Rolling back..."
+    
+    # Delete tag if created
+    if git tag -l | grep -q "^$tag$"; then
+        git tag -d "$tag" 2>/dev/null || true
+        git push origin ":refs/tags/$tag" 2>/dev/null || true
+        log_warn "Deleted tag: $tag"
+    fi
+    
+    # Reset version in package.json
+    git reset --hard HEAD~1 2>/dev/null || true
+    
+    log_error "Rollback completed. Please investigate the error and try again."
+}
+
+# ============================================================================
+# Main Release Flow
+# ============================================================================
 
 main() {
-    echo ""
-    echo "╔═══════════════════════════════════════════════════════════════╗"
-    echo "║           $PACKAGE_NAME Release Script             ║"
-    echo "╚═══════════════════════════════════════════════════════════════╝"
-    echo ""
-    
-    cd "$PROJECT_DIR"
+    echo -e "${BOLD}${MAGENTA}"
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║         @struktos/core - Release Script                  ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
     
     # Parse arguments
-    BUMP_TYPE=${1:-""}
-    CURRENT_VERSION=$(get_current_version)
+    parse_arguments "$@"
     
-    if [ -n "$BUMP_TYPE" ]; then
-        NEW_VERSION=$(bump_version "$BUMP_TYPE")
-    else
-        NEW_VERSION=$CURRENT_VERSION
-    fi
+    # Pre-flight checks
+    check_git_repository
+    check_uncommitted_changes
+    check_current_branch
+    check_npm_login
+    check_github_cli
+    check_node_version
     
-    info "Package: $PACKAGE_NAME"
-    info "Current version: $CURRENT_VERSION"
-    info "Release version: $NEW_VERSION"
-    echo ""
+    # Version management
+    select_version_bump
+    local new_version=$(bump_version)
     
-    # Confirmation
-    read -p "Proceed with release v$NEW_VERSION? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        info "Release cancelled"
-        exit 0
-    fi
-    
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
-    # Run release steps
-    preflight_checks
-    
-    if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
-        update_package_version "$NEW_VERSION"
-    fi
-    
-    build_package
+    # Testing & building
     run_tests
-    create_git_tag "$NEW_VERSION"
-    push_to_github "$NEW_VERSION"
-    create_github_release "$NEW_VERSION"
-    publish_to_npm "$NEW_VERSION"
+    build_package
     
+    # Git operations
+    commit_version_bump "$new_version"
+    create_git_tag "$new_version"
+    push_to_remote "$new_version"
+    
+    # GitHub & npm publishing
+    create_github_release "$new_version" || {
+        rollback_on_error "$new_version"
+        exit 1
+    }
+    
+    publish_to_npm "$new_version" || {
+        rollback_on_error "$new_version"
+        exit 1
+    }
+    
+    # Success summary
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo -e "${GREEN}${BOLD}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}${BOLD}║              🎉 Release Successful! 🎉                    ║${NC}"
+    echo -e "${GREEN}${BOLD}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    success "🎉 Release v$NEW_VERSION completed successfully!"
+    echo -e "${BOLD}Version:${NC} $new_version"
+    echo -e "${BOLD}Package:${NC} https://www.npmjs.com/package/$PACKAGE_NAME/v/$new_version"
+    echo -e "${BOLD}Release:${NC} https://github.com/struktos/core/releases/tag/v$new_version"
     echo ""
-    echo "  📦 npm: https://www.npmjs.com/package/$PACKAGE_NAME"
-    echo "  🐙 GitHub: Check your repository releases"
+    echo -e "${CYAN}Installation:${NC}"
+    echo -e "  npm install $PACKAGE_NAME@$new_version"
     echo ""
+    
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "This was a DRY-RUN. No actual publishing occurred."
+    fi
 }
 
-# Run main function
+# ============================================================================
+# Entry Point
+# ============================================================================
+
 main "$@"

@@ -877,7 +877,7 @@ export class PipelineBuilder<T extends StruktosContextData = StruktosContextData
       const dispatch = async (): Promise<void> => {
         if (index < middlewares.length) {
           const middleware = middlewares[index++];
-          await middleware.invoke(ctx, dispatch);
+          await middleware?.invoke(ctx, dispatch);
         } else {
           await next();
         }

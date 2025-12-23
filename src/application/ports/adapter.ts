@@ -213,7 +213,7 @@ export abstract class AdapterBase<T extends StruktosContextData = StruktosContex
     const next = async (): Promise<void> => {
       if (index < this.middlewares.length) {
         const middleware = this.middlewares[index++];
-        await middleware.invoke(ctx, next);
+        await middleware?.invoke(ctx, next);
       }
     };
 

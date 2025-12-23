@@ -1,0 +1,324 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  # ============================================================================
+  # JOB 1: Version Change Detection
+  # ============================================================================
+
+  check-version:
+    name: Check Version Change
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+      version_type: ${{ steps.check.outputs.version_type }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Detect version change
+        id: check
+        run: |
+          # Get current version from package.json
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "📦 Local version: $PACKAGE_VERSION"
+          
+          # Check if version exists on npm
+          NPM_VERSION=$(npm view @struktos/core version 2>/dev/null || echo "0.0.0")
+          echo "📦 NPM version: $NPM_VERSION"
+          
+          if [ "$PACKAGE_VERSION" != "$NPM_VERSION" ]; then
+            echo "✅ Version changed: $NPM_VERSION → $PACKAGE_VERSION"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+            
+            # Determine version type
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$PACKAGE_VERSION"
+            IFS='.' read -r OLD_MAJOR OLD_MINOR OLD_PATCH <<< "$NPM_VERSION"
+            
+            if [ "$MAJOR" != "$OLD_MAJOR" ]; then
+              echo "version_type=major" >> $GITHUB_OUTPUT
+              echo "🚀 MAJOR release detected"
+            elif [ "$MINOR" != "$OLD_MINOR" ]; then
+              echo "version_type=minor" >> $GITHUB_OUTPUT
+              echo "✨ MINOR release detected"
+            else
+              echo "version_type=patch" >> $GITHUB_OUTPUT
+              echo "🐛 PATCH release detected"
+            fi
+          else
+            echo "⏭️  Version unchanged, skipping release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate version format
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          VERSION=${{ steps.check.outputs.version }}
+          
+          # Check semver format: X.Y.Z or X.Y.Z-beta.N
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-beta.N"
+            exit 1
+          fi
+          
+          echo "✅ Version format valid: $VERSION"
+
+  # ============================================================================
+  # JOB 2: Run Full Test Suite
+  # ============================================================================
+
+  test:
+    name: Run Full Test Suite
+    runs-on: ubuntu-latest
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run build
+
+      - name: Run all tests
+        run: npm test
+
+      - name: Check coverage threshold
+        run: npm run test:coverage
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+  # ============================================================================
+  # JOB 3: Build Release Package
+  # ============================================================================
+
+  build:
+    name: Build Release Package
+    runs-on: ubuntu-latest
+    needs: [check-version, test]
+    if: needs.check-version.outputs.should_release == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          echo "📁 Build output:"
+          ls -la dist/
+          
+          # Check required files
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ Missing dist/index.js"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.d.ts" ]; then
+            echo "❌ Missing dist/index.d.ts"
+            exit 1
+          fi
+          
+          echo "✅ Build output verified"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ============================================================================
+  # JOB 4: Create GitHub Release & Publish to npm
+  # ============================================================================
+
+  release:
+    name: Create Release & Publish
+    runs-on: ubuntu-latest
+    needs: [check-version, test, build]
+    if: needs.check-version.outputs.should_release == 'true'
+    permissions:
+      contents: write
+      id-token: write  # Required for npm provenance
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Git tag
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          
+          # Extract changelog section for this version
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG=$(awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 | tail -n +2)
+          fi
+          
+          if [ -z "$CHANGELOG" ]; then
+            # Generate basic changelog from commits
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+            
+            if [ -z "$LAST_TAG" ]; then
+              CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+            else
+              CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            fi
+          fi
+          
+          # Save to file for multi-line handling
+          echo "$CHANGELOG" > release_notes.md
+          
+          # Add header
+          {
+            echo "## What's Changed"
+            echo ""
+            cat release_notes.md
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Full Changelog**: https://github.com/struktos/core/compare/v${LAST_TAG}...v$VERSION"
+          } > release_notes_final.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: v${{ needs.check-version.outputs.version }}
+          body_path: release_notes_final.md
+          draft: false
+          prerelease: ${{ contains(needs.check-version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify npm publication
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          
+          # Wait for npm to propagate
+          sleep 10
+          
+          # Verify package is published
+          NPM_VERSION=$(npm view @struktos/core version)
+          
+          if [ "$NPM_VERSION" = "$VERSION" ]; then
+            echo "✅ Successfully published @struktos/core@$VERSION to npm"
+          else
+            echo "❌ Failed to verify npm publication"
+            echo "Expected: $VERSION"
+            echo "Got: $NPM_VERSION"
+            exit 1
+          fi
+
+      - name: Generate release summary
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          VERSION_TYPE=${{ needs.check-version.outputs.version_type }}
+          
+          {
+            echo "## 🎉 Release Summary"
+            echo ""
+            echo "**Version:** v$VERSION"
+            echo ""
+            echo "**Release Type:** ${VERSION_TYPE^^}"
+            echo ""
+            echo "**Published to:**"
+            echo "- 📦 npm: [@struktos/core@$VERSION](https://www.npmjs.com/package/@struktos/core/v/$VERSION)"
+            echo "- 🐙 GitHub Releases: [v$VERSION](https://github.com/struktos/core/releases/tag/v$VERSION)"
+            echo ""
+            echo "**Installation:**"
+            echo "\`\`\`bash"
+            echo "npm install @struktos/core@$VERSION"
+            echo "\`\`\`"
+            echo ""
+            echo "**Provenance:** ✅ Published with npm provenance"
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "## ❌ Release Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release process failed. Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Troubleshooting:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify NPM_TOKEN is valid" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check if version already exists on npm" >> $GITHUB_STEP_SUMMARY
+          echo "3. Ensure all tests passed" >> $GITHUB_STEP_SUMMARY

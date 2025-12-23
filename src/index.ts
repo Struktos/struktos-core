@@ -52,6 +52,15 @@ export {
   ExceptionFilterChain,
 } from './domain/exceptions';
 
+export type {
+  EventMetadata,
+  IDomainEvent,
+  IEventRaisingEntity,
+  IEventBus,
+  IEventHandler,
+} from './domain/events';
+export { AggregateRoot } from './domain/events';
+
 
 /**
  * Domain layer containing core business rules (Entities, Repositories, UoW, Specifications).
@@ -95,6 +104,16 @@ export {
   AdapterFactory,
   ServerInfo,
 } from './application/ports';
+
+export type {
+  IServiceCollection,
+  IDIServiceProvider,
+  IServiceScope,
+} from './application/di';
+
+export { ServiceScope } from './application/di';
+export { Injectable, Inject } from './application/di';
+export { DependencyResolutionError } from './application/di';
 
 
 /**

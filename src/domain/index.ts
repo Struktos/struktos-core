@@ -1,56 +1,133 @@
 /**
- * @fileoverview Domain Layer Exports
- * @description
- * The Domain Layer contains the core business logic abstractions
- * following Domain-Driven Design (DDD) principles.
- *
- * This layer includes:
- * - **Repository Pattern**: Data access abstractions with Unit of Work support
- * - **Specification Pattern**: Business rules and query composition
- * - **Entity/Value Object**: Base domain model abstractions (from existing core)
- *
- * @packageDocumentation
  * @module @struktos/core/domain
- * @version 1.0.0
- *
+ * @description Domain layer exports
+ */
+
+// ============================================================================
+// Context Management
+// ============================================================================
+
+export * from './context';
+
+// ============================================================================
+// Domain Events
+// ============================================================================
+
+export * from './events';
+
+// ============================================================================
+// Repository Pattern
+// ============================================================================
+
+export * from './repository';
+
+// ============================================================================
+// Specification Pattern
+// ============================================================================
+
+export * from './specification';
+
+// ============================================================================
+// Re-exports for Common Use Cases
+// ============================================================================
+
+/**
+ * Context exports
+ * 
  * @example
  * ```typescript
  * import {
+ *   IContext,
+ *   RequestContext,
+ *   StruktosContextData
+ * } from '@struktos/core/domain';
+ * 
+ * await RequestContext.run({ traceId: 'trace-123' }, async () => {
+ *   const ctx = RequestContext.current();
+ *   console.log(ctx?.get('traceId'));
+ * });
+ * ```
+ */
+export type {
+  IContext,
+  StruktosContextData,
+} from './context';
+
+/**
+ * Domain Events exports
+ * 
+ * @example
+ * ```typescript
+ * import {
+ *   IDomainEvent,
+ *   IEventRaisingEntity,
+ *   IEventBus,
+ *   IEventHandler
+ * } from '@struktos/core/domain';
+ * 
+ * class OrderCreatedEvent implements IDomainEvent<OrderCreatedPayload> {
+ *   eventName = 'OrderCreated';
+ *   metadata = { eventId: 'evt-123', occurredAt: new Date().toISOString() };
+ *   constructor(public readonly payload: OrderCreatedPayload) {}
+ * }
+ * 
+ * class Order extends AggregateRoot {
+ *   static create(data: CreateOrderData): Order {
+ *     const order = new Order(data);
+ *     order.raiseEvent(new OrderCreatedEvent({ orderId: order.id }));
+ *     return order;
+ *   }
+ * }
+ * ```
+ */
+export type {
+  EventMetadata,
+  IDomainEvent,
+  IEventRaisingEntity,
+  IEventBus,
+  IEventHandler,
+} from './events';
+
+export { AggregateRoot } from './events';
+export type { AggregateRoot as AggregateRootBase } from './events';
+
+/**
+ * Repository exports
+ * 
+ * @example
+ * ```typescript
+ * import {
+ *   IRepository,
  *   IUnitOfWork,
+ *   IsolationLevel
+ * } from '@struktos/core/domain';
+ * ```
+ */
+export type {
+  //IRepository,
+  IUnitOfWork,
+  IUnitOfWorkFactory,
+  IsolationLevel,
+} from './repository';
+export { TransactionState } from './repository';
+
+/**
+ * Specification exports
+ * 
+ * @example
+ * ```typescript
+ * import {
  *   ISpecification,
  *   SpecificationBase
  * } from '@struktos/core/domain';
- *
- * // Create a specification for active users
+ * 
  * class ActiveUserSpec extends SpecificationBase<User> {
  *   isSatisfiedBy(user: User): boolean {
  *     return user.isActive && !user.isDeleted;
  *   }
  * }
- *
- * // Use within a unit of work transaction
- * async function processActiveUsers(uow: IUnitOfWork<MyContext>) {
- *   await uow.start();
- *   try {
- *     const userRepo = uow.getRepository<User>('users');
- *     // ... business logic
- *     await uow.commit();
- *   } catch (error) {
- *     await uow.rollback();
- *     throw error;
- *   }
- * }
  * ```
  */
-
-// Repository abstractions (including Unit of Work)
-export * from './repository';
-
-// Specification pattern
-export * from './specification';
-
-// Core context propagation and management
-export * from './context';
-
-// Exception abstractions for exception handling
-export * from './exceptions'
+export type {
+  ISpecification,
+} from './specification';

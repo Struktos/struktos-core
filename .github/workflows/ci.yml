@@ -1,0 +1,400 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  COVERAGE_THRESHOLD: 90
+
+jobs:
+  # ============================================================================
+  # JOB 1: Lint & Format Check
+  # ============================================================================
+  
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Prettier check
+        run: npm run format:check
+
+      - name: Check for console.log statements
+        run: |
+          if grep -r "console\.log" src --include="*.ts" --exclude="*.test.ts"; then
+            echo "❌ Found console.log statements in source code"
+            exit 1
+          else
+            echo "✅ No console.log statements found"
+          fi
+
+  # ============================================================================
+  # JOB 2: TypeScript Type Check
+  # ============================================================================
+
+  typecheck:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript compiler
+        run: npm run build
+
+      - name: Verify dist output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ dist directory not created"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.d.ts" ]; then
+            echo "❌ Type definition files not generated"
+            exit 1
+          fi
+          
+          echo "✅ Build output verified"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-dist
+          path: dist/
+          retention-days: 1
+
+  # ============================================================================
+  # JOB 3: Unit Tests (Matrix - Node 18, 20, 22)
+  # ============================================================================
+
+  unit-tests:
+    name: Unit Tests (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20, 22]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit -- --coverage
+
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-coverage-node-${{ matrix.node-version }}
+          path: coverage/
+          retention-days: 1
+
+  # ============================================================================
+  # JOB 4: Integration Tests
+  # ============================================================================
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration -- --coverage
+
+      - name: Upload integration test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-coverage
+          path: coverage/
+          retention-days: 1
+
+  # ============================================================================
+  # JOB 5: Coverage Enforcement (CRITICAL)
+  # ============================================================================
+
+  coverage-check:
+    name: Coverage Threshold Enforcement (≥90%)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all tests with coverage
+        run: npm run test:coverage
+
+      - name: Generate coverage summary
+        run: |
+          echo "## 📊 Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Coverage Threshold: **≥${{ env.COVERAGE_THRESHOLD }}%**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check coverage threshold
+        id: coverage
+        run: |
+          THRESHOLD=${{ env.COVERAGE_THRESHOLD }}
+          
+          # Extract coverage percentages from coverage-summary.json
+          BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")
+          FUNCTIONS=$(node -p "require('./coverage/coverage-summary.json').total.functions.pct")
+          LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")
+          STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")
+          
+          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+          echo "lines=$LINES" >> $GITHUB_OUTPUT
+          echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
+          
+          echo "| Metric | Coverage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          FAILED=false
+          
+          # Check branches
+          if (( $(echo "$BRANCHES < $THRESHOLD" | bc -l) )); then
+            echo "| Branches | ${BRANCHES}% | ❌ FAIL |" >> $GITHUB_STEP_SUMMARY
+            FAILED=true
+          else
+            echo "| Branches | ${BRANCHES}% | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check functions
+          if (( $(echo "$FUNCTIONS < $THRESHOLD" | bc -l) )); then
+            echo "| Functions | ${FUNCTIONS}% | ❌ FAIL |" >> $GITHUB_STEP_SUMMARY
+            FAILED=true
+          else
+            echo "| Functions | ${FUNCTIONS}% | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check lines
+          if (( $(echo "$LINES < $THRESHOLD" | bc -l) )); then
+            echo "| Lines | ${LINES}% | ❌ FAIL |" >> $GITHUB_STEP_SUMMARY
+            FAILED=true
+          else
+            echo "| Lines | ${LINES}% | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check statements
+          if (( $(echo "$STATEMENTS < $THRESHOLD" | bc -l) )); then
+            echo "| Statements | ${STATEMENTS}% | ❌ FAIL |" >> $GITHUB_STEP_SUMMARY
+            FAILED=true
+          else
+            echo "| Statements | ${STATEMENTS}% | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "$FAILED" = true ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**❌ Coverage threshold not met. Required: ≥${THRESHOLD}%**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**✅ All coverage thresholds met!**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Generate coverage badge
+        run: |
+          LINES=${{ steps.coverage.outputs.lines }}
+          COLOR="red"
+          
+          if (( $(echo "$LINES >= 90" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$LINES >= 80" | bc -l) )); then
+            COLOR="green"
+          elif (( $(echo "$LINES >= 70" | bc -l) )); then
+            COLOR="yellowgreen"
+          elif (( $(echo "$LINES >= 60" | bc -l) )); then
+            COLOR="yellow"
+          fi
+          
+          echo "Coverage badge: ![Coverage](https://img.shields.io/badge/coverage-${LINES}%25-${COLOR})"
+
+  # ============================================================================
+  # JOB 6: Dependency Audit
+  # ============================================================================
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Check for vulnerabilities
+        run: |
+          AUDIT_REPORT=$(npm audit --json)
+          CRITICAL=$(echo $AUDIT_REPORT | jq '.metadata.vulnerabilities.critical')
+          HIGH=$(echo $AUDIT_REPORT | jq '.metadata.vulnerabilities.high')
+          
+          if [ "$CRITICAL" != "0" ] || [ "$HIGH" != "0" ]; then
+            echo "❌ Found $CRITICAL critical and $HIGH high severity vulnerabilities"
+            exit 1
+          else
+            echo "✅ No critical or high severity vulnerabilities found"
+          fi
+
+  # ============================================================================
+  # JOB 7: Build Verification
+  # ============================================================================
+
+  build-verification:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [typecheck, unit-tests, integration-tests, coverage-check]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify package.json
+        run: |
+          node -e "
+          const pkg = require('./package.json');
+          
+          // Check required fields
+          if (!pkg.name) throw new Error('Missing package name');
+          if (!pkg.version) throw new Error('Missing package version');
+          if (!pkg.main) throw new Error('Missing main entry point');
+          if (!pkg.types) throw new Error('Missing types entry point');
+          
+          // Verify entry points exist
+          const fs = require('fs');
+          if (!fs.existsSync(pkg.main)) throw new Error('Main entry point does not exist');
+          if (!fs.existsSync(pkg.types)) throw new Error('Types entry point does not exist');
+          
+          console.log('✅ Package validation passed');
+          console.log('Package:', pkg.name);
+          console.log('Version:', pkg.version);
+          console.log('Main:', pkg.main);
+          console.log('Types:', pkg.types);
+          "
+
+      - name: Test package installation
+        run: |
+          npm pack
+          PACKAGE=$(ls *.tgz)
+          npm install -g $PACKAGE
+          echo "✅ Package installation successful"
+
+  # ============================================================================
+  # JOB 8: Final Status
+  # ============================================================================
+
+  ci-success:
+    name: ✅ All CI Checks Passed
+    runs-on: ubuntu-latest
+    needs: 
+      - lint
+      - typecheck
+      - unit-tests
+      - integration-tests
+      - coverage-check
+      - security-audit
+      - build-verification
+    
+    steps:
+      - name: Success summary
+        run: |
+          echo "## 🎉 CI Pipeline Completed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All checks passed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Lint & Format" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ TypeScript Type Check" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Unit Tests (Node 18, 20, 22)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Coverage ≥90%" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Security Audit" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ready for merge! 🚀**" >> $GITHUB_STEP_SUMMARY
