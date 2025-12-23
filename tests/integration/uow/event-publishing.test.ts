@@ -1,23 +1,23 @@
 /**
  * @fileoverview Integration tests for Unit of Work + Event Bus
- * 
+ *
  * Tests the critical flow: Aggregate → Repository → UnitOfWork → EventBus
- * 
+ *
  * CRITICAL: Events must be published ONLY after successful transaction commit.
  * If transaction rolls back, events MUST NOT be published (data consistency).
  */
 
-import { 
-  IDomainEvent, 
-  EventMetadata, 
-  IUnitOfWork, 
+import {
+  IDomainEvent,
+  EventMetadata,
+  IUnitOfWork,
   IEventBus,
-  IEventHandler,  // ← 추가!
-  TransactionState, 
+  IEventHandler, // ← 추가!
+  TransactionState,
   TransactionResult,
   AggregateRoot,
   StruktosContextData,
-  IContext
+  IContext,
 } from '../../../src';
 
 // ============================================================================
@@ -50,14 +50,14 @@ class OrderCreatedEvent implements IDomainEvent<OrderCreatedPayload> {
 
 /**
  * Order aggregate root extending AggregateRoot base class
- * 
+ *
  * Simplified domain entity for testing event publishing flow.
  */
 class Order extends AggregateRoot {
   private constructor(
     public readonly id: string,
     public readonly customerId: string,
-    public readonly total: number
+    public readonly total: number,
   ) {
     super();
   }
@@ -71,7 +71,7 @@ class Order extends AggregateRoot {
         orderId: order.id,
         customerId: order.customerId,
         total: order.total,
-      })
+      }),
     );
 
     return order;
@@ -91,7 +91,7 @@ class MockEventBus implements IEventBus {
 
   async publish<TPayload>(event: IDomainEvent<TPayload>): Promise<void> {
     this.publishedEvents.push(event);
-    
+
     // Trigger registered handlers
     const eventHandlers = this.handlers.get(event.eventName) || [];
     for (const handler of eventHandlers) {
@@ -111,7 +111,7 @@ class MockEventBus implements IEventBus {
 
   registerHandler<TPayload>(
     eventName: string,
-    handler: IEventHandler<IDomainEvent<TPayload>>
+    handler: IEventHandler<IDomainEvent<TPayload>>,
   ): void {
     if (!this.handlers.has(eventName)) {
       this.handlers.set(eventName, []);
@@ -163,7 +163,7 @@ class MockUnitOfWork implements IUnitOfWork<StruktosContextData> {
     if (this.transaction.isRolledBack) {
       throw new Error('Cannot commit after rollback');
     }
-    
+
     if (!this.transaction.isActive) {
       throw new Error('No active transaction');
     }
@@ -224,7 +224,9 @@ class MockUnitOfWork implements IUnitOfWork<StruktosContextData> {
   }
 
   async executeInTransaction<TResult>(
-    callback: (unitOfWork: IUnitOfWork<StruktosContextData>) => Promise<TResult>
+    callback: (
+      unitOfWork: IUnitOfWork<StruktosContextData>,
+    ) => Promise<TResult>,
   ): Promise<TResult> {
     await this.start();
     try {
@@ -298,8 +300,16 @@ describe('UnitOfWork + EventBus Integration', () => {
     });
 
     it('should publish multiple events in order', async () => {
-      const event1 = new OrderCreatedEvent({ orderId: 'order-1', customerId: 'cust-1', total: 100 });
-      const event2 = new OrderCreatedEvent({ orderId: 'order-2', customerId: 'cust-2', total: 200 });
+      const event1 = new OrderCreatedEvent({
+        orderId: 'order-1',
+        customerId: 'cust-1',
+        total: 100,
+      });
+      const event2 = new OrderCreatedEvent({
+        orderId: 'order-2',
+        customerId: 'cust-2',
+        total: 200,
+      });
 
       await uow.start();
       uow.addDomainEvents([event1, event2]);
@@ -345,8 +355,16 @@ describe('UnitOfWork + EventBus Integration', () => {
     });
 
     it('should discard all buffered events on rollback', async () => {
-      const event1 = new OrderCreatedEvent({ orderId: 'order-1', customerId: 'cust-1', total: 100 });
-      const event2 = new OrderCreatedEvent({ orderId: 'order-2', customerId: 'cust-2', total: 200 });
+      const event1 = new OrderCreatedEvent({
+        orderId: 'order-1',
+        customerId: 'cust-1',
+        total: 100,
+      });
+      const event2 = new OrderCreatedEvent({
+        orderId: 'order-2',
+        customerId: 'cust-2',
+        total: 200,
+      });
 
       await uow.start();
       uow.addDomainEvents([event1, event2]);
@@ -361,7 +379,9 @@ describe('UnitOfWork + EventBus Integration', () => {
       await uow.rollback();
 
       // Attempting to commit after rollback should fail
-      await expect(uow.commit()).rejects.toThrow('Cannot commit after rollback');
+      await expect(uow.commit()).rejects.toThrow(
+        'Cannot commit after rollback',
+      );
 
       // Events still not published
       expect(eventBus.publishedEvents).toHaveLength(0);
@@ -375,10 +395,10 @@ describe('UnitOfWork + EventBus Integration', () => {
   describe('Event Handler Integration', () => {
     it('should trigger event handlers on publish', async () => {
       const handleSpy = jest.fn();
-      
+
       // Create proper IEventHandler mock
       const mockHandler: IEventHandler<OrderCreatedEvent> = {
-        handle: handleSpy
+        handle: handleSpy,
       };
 
       eventBus.registerHandler('OrderCreated', mockHandler);
@@ -398,11 +418,11 @@ describe('UnitOfWork + EventBus Integration', () => {
       const analyticsHandlerSpy = jest.fn();
 
       const emailHandler: IEventHandler<OrderCreatedEvent> = {
-        handle: emailHandlerSpy
+        handle: emailHandlerSpy,
       };
 
       const analyticsHandler: IEventHandler<OrderCreatedEvent> = {
-        handle: analyticsHandlerSpy
+        handle: analyticsHandlerSpy,
       };
 
       eventBus.registerHandler('OrderCreated', emailHandler);
@@ -422,7 +442,7 @@ describe('UnitOfWork + EventBus Integration', () => {
       const handleSpy = jest.fn();
 
       const mockHandler: IEventHandler<OrderCreatedEvent> = {
-        handle: handleSpy
+        handle: handleSpy,
       };
 
       eventBus.registerHandler('OrderCreated', mockHandler);
@@ -440,7 +460,7 @@ describe('UnitOfWork + EventBus Integration', () => {
       const handleSpy = jest.fn();
 
       const mockHandler: IEventHandler<OrderCreatedEvent> = {
-        handle: handleSpy
+        handle: handleSpy,
       };
 
       eventBus.registerHandler('OrderCreated', mockHandler);
@@ -455,9 +475,9 @@ describe('UnitOfWork + EventBus Integration', () => {
           eventName: 'OrderCreated',
           payload: expect.objectContaining({
             customerId: 'customer-123',
-            total: 100.0
-          })
-        })
+            total: 100.0,
+          }),
+        }),
       );
     });
   });

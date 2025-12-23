@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Middleware Interface
- * 
+ *
  * ASP.NET Core-inspired middleware interface for Struktos platform.
  * Provides a unified middleware abstraction that works across different adapters.
  */
@@ -16,7 +16,9 @@ export type NextFunction = () => Promise<void>;
 /**
  * Middleware context containing request, response, and context data
  */
-export interface MiddlewareContext<T extends StruktosContextData = StruktosContextData> {
+export interface MiddlewareContext<
+  T extends StruktosContextData = StruktosContextData,
+> {
   /** Request context from AsyncLocalStorage */
   context: RequestContext<T>;
 
@@ -55,29 +57,31 @@ export interface IServiceProvider {
 
 /**
  * IStruktosMiddleware - Core middleware interface
- * 
+ *
  * Inspired by ASP.NET Core's middleware pattern. Each middleware receives
  * a context and a next function to call the next middleware in the pipeline.
- * 
+ *
  * @example
  * ```typescript
  * class LoggingMiddleware implements IStruktosMiddleware {
  *   async invoke(ctx: MiddlewareContext, next: NextFunction): Promise<void> {
  *     const start = Date.now();
  *     console.log(`[${ctx.request.method}] ${ctx.request.path}`);
- *     
+ *
  *     await next(); // Call next middleware
- *     
+ *
  *     const duration = Date.now() - start;
  *     console.log(`Completed in ${duration}ms`);
  *   }
  * }
  * ```
  */
-export interface IStruktosMiddleware<T extends StruktosContextData = StruktosContextData> {
+export interface IStruktosMiddleware<
+  T extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Middleware execution method
-   * 
+   *
    * @param ctx - Middleware context containing request, response, and context
    * @param next - Function to invoke the next middleware in the pipeline
    */
@@ -87,10 +91,9 @@ export interface IStruktosMiddleware<T extends StruktosContextData = StruktosCon
 /**
  * Middleware function type for inline middleware
  */
-export type MiddlewareFunction<T extends StruktosContextData = StruktosContextData> = (
-  ctx: MiddlewareContext<T>,
-  next: NextFunction
-) => Promise<void>;
+export type MiddlewareFunction<
+  T extends StruktosContextData = StruktosContextData,
+> = (ctx: MiddlewareContext<T>, next: NextFunction) => Promise<void>;
 
 /**
  * Type guard to check if something is a middleware
@@ -102,9 +105,9 @@ export function isMiddleware(obj: any): obj is IStruktosMiddleware {
 /**
  * Convert a function to middleware object
  */
-export function createMiddleware<T extends StruktosContextData = StruktosContextData>(
-  fn: MiddlewareFunction<T>
-): IStruktosMiddleware<T> {
+export function createMiddleware<
+  T extends StruktosContextData = StruktosContextData,
+>(fn: MiddlewareFunction<T>): IStruktosMiddleware<T> {
   return {
     invoke: fn,
   };
@@ -113,16 +116,17 @@ export function createMiddleware<T extends StruktosContextData = StruktosContext
 /**
  * Middleware factory type for configurable middleware
  */
-export type MiddlewareFactory<TOptions = any, T extends StruktosContextData = StruktosContextData> = (
-  options?: TOptions
-) => IStruktosMiddleware<T>;
+export type MiddlewareFactory<
+  TOptions = any,
+  T extends StruktosContextData = StruktosContextData,
+> = (options?: TOptions) => IStruktosMiddleware<T>;
 
 /**
  * Abstract base class for middleware with common utilities
  */
-export abstract class StruktosMiddlewareBase<T extends StruktosContextData = StruktosContextData>
-  implements IStruktosMiddleware<T>
-{
+export abstract class StruktosMiddlewareBase<
+  T extends StruktosContextData = StruktosContextData,
+> implements IStruktosMiddleware<T> {
   /**
    * Implement this method in derived classes
    */
@@ -145,7 +149,11 @@ export abstract class StruktosMiddlewareBase<T extends StruktosContextData = Str
   /**
    * Helper to set response status and body
    */
-  protected setResponse(ctx: MiddlewareContext<T>, status: number, body?: any): void {
+  protected setResponse(
+    ctx: MiddlewareContext<T>,
+    status: number,
+    body?: any,
+  ): void {
     ctx.response.status = status;
     ctx.response.body = body;
   }
@@ -169,7 +177,7 @@ export class LoggingMiddleware extends StruktosMiddlewareBase {
       logRequest?: boolean;
       logResponse?: boolean;
       logDuration?: boolean;
-    } = {}
+    } = {},
   ) {
     super();
     this.options = {
@@ -194,7 +202,7 @@ export class LoggingMiddleware extends StruktosMiddlewareBase {
 
     if (this.options.logResponse) {
       console.log(
-        `[${traceId}] ← ${ctx.response.status}${this.options.logDuration ? ` (${duration}ms)` : ''}`
+        `[${traceId}] ← ${ctx.response.status}${this.options.logDuration ? ` (${duration}ms)` : ''}`,
       );
     }
   }
@@ -224,7 +232,7 @@ export class ErrorHandlingMiddleware extends StruktosMiddlewareBase {
     private readonly options: {
       includeStack?: boolean;
       includeDetails?: boolean;
-    } = {}
+    } = {},
   ) {
     super();
   }
@@ -234,7 +242,7 @@ export class ErrorHandlingMiddleware extends StruktosMiddlewareBase {
       await next();
     } catch (error) {
       const traceId = this.getTraceId(ctx);
-      
+
       ctx.response.status = (error as any).statusCode || 500;
       ctx.response.headers['Content-Type'] = 'application/json';
       ctx.response.body = {
@@ -262,7 +270,7 @@ export class CorsMiddleware extends StruktosMiddlewareBase {
       headers?: string[];
       credentials?: boolean;
       maxAge?: number;
-    } = {}
+    } = {},
   ) {
     super();
     this.options = {
@@ -290,9 +298,13 @@ export class CorsMiddleware extends StruktosMiddlewareBase {
 
     // Handle preflight
     if (ctx.request.method === 'OPTIONS') {
-      ctx.response.headers['Access-Control-Allow-Methods'] = this.options.methods!.join(', ');
-      ctx.response.headers['Access-Control-Allow-Headers'] = this.options.headers!.join(', ');
-      ctx.response.headers['Access-Control-Max-Age'] = String(this.options.maxAge);
+      ctx.response.headers['Access-Control-Allow-Methods'] =
+        this.options.methods!.join(', ');
+      ctx.response.headers['Access-Control-Allow-Headers'] =
+        this.options.headers!.join(', ');
+      ctx.response.headers['Access-Control-Max-Age'] = String(
+        this.options.maxAge,
+      );
       ctx.response.status = 204;
       return;
     }

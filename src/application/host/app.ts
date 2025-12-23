@@ -1,25 +1,32 @@
 /**
  * @struktos/core - Struktos Application
- * 
+ *
  * Main application class that serves as the entry point for Struktos applications.
  * Inspired by ASP.NET Core's WebApplication pattern.
  */
 
 import { StruktosContextData } from '../../domain/context';
-import { 
-  IStruktosMiddleware, 
-  MiddlewareFunction, 
+import {
+  IStruktosMiddleware,
+  MiddlewareFunction,
   createMiddleware,
-  isMiddleware
+  isMiddleware,
 } from '../../infrastructure/platform/middleware';
-import { 
-  IExceptionFilter, 
-  ExceptionFilterChain, 
+import {
+  IExceptionFilter,
+  ExceptionFilterChain,
   DefaultExceptionFilter,
-  ExceptionContext
+  ExceptionContext,
 } from '../../domain/exceptions/exceptions';
 import { IAdapter, ServerInfo } from '../ports/adapter';
-import { IHost, StruktosHost, HostOptions, IBackgroundService, ILogger, consoleLogger } from './host';
+import {
+  IHost,
+  StruktosHost,
+  HostOptions,
+  IBackgroundService,
+  ILogger,
+  consoleLogger,
+} from './host';
 
 /**
  * Application builder options
@@ -40,24 +47,24 @@ export interface StruktosAppOptions extends HostOptions {
 
 /**
  * StruktosApp - Main application class
- * 
+ *
  * This is the primary entry point for Struktos applications.
  * It provides a fluent API for configuring middleware, exception filters,
  * and adapters.
- * 
+ *
  * @example
  * ```typescript
  * const app = StruktosApp.create();
- * 
+ *
  * // Add middleware
  * app.use(async (ctx, next) => {
  *   console.log(`${ctx.request.method} ${ctx.request.path}`);
  *   await next();
  * });
- * 
+ *
  * // Add exception filter
  * app.useExceptionFilter(new ValidationExceptionFilter());
- * 
+ *
  * // Start with adapter
  * await app.listen(expressAdapter, 3000);
  * ```
@@ -72,7 +79,7 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
 
   private constructor(private readonly options: StruktosAppOptions = {}) {
     this.logger = options.logger ?? consoleLogger;
-    
+
     // Add default exception filter
     if (options.useDefaultErrorHandler !== false) {
       this.exceptionFilters.addFilter(new DefaultExceptionFilter());
@@ -83,7 +90,7 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
    * Create a new Struktos application
    */
   static create<T extends StruktosContextData = StruktosContextData>(
-    options?: StruktosAppOptions
+    options?: StruktosAppOptions,
   ): StruktosApp<T> {
     return new StruktosApp<T>(options);
   }
@@ -92,7 +99,7 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
 
   /**
    * Add middleware to the pipeline
-   * 
+   *
    * @param middleware - Middleware instance or function
    */
   use(middleware: IStruktosMiddleware<T> | MiddlewareFunction<T>): this {
@@ -107,7 +114,9 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
   /**
    * Add multiple middlewares
    */
-  useMany(middlewares: Array<IStruktosMiddleware<T> | MiddlewareFunction<T>>): this {
+  useMany(
+    middlewares: Array<IStruktosMiddleware<T> | MiddlewareFunction<T>>,
+  ): this {
     for (const middleware of middlewares) {
       this.use(middleware);
     }
@@ -119,7 +128,7 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
    */
   useIf(
     condition: boolean | (() => boolean),
-    middleware: IStruktosMiddleware<T> | MiddlewareFunction<T>
+    middleware: IStruktosMiddleware<T> | MiddlewareFunction<T>,
   ): this {
     const shouldUse = typeof condition === 'function' ? condition() : condition;
     if (shouldUse) {
@@ -133,11 +142,13 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
    */
   useFor(
     pathPrefix: string,
-    middleware: IStruktosMiddleware<T> | MiddlewareFunction<T>
+    middleware: IStruktosMiddleware<T> | MiddlewareFunction<T>,
   ): this {
     const wrappedMiddleware = createMiddleware<T>(async (ctx, next) => {
       if (ctx.request.path.startsWith(pathPrefix)) {
-        const actualMiddleware = isMiddleware(middleware) ? middleware : createMiddleware(middleware);
+        const actualMiddleware = isMiddleware(middleware)
+          ? middleware
+          : createMiddleware(middleware);
         await actualMiddleware.invoke(ctx, next);
       } else {
         await next();
@@ -198,12 +209,16 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
 
   /**
    * Start the application with a specific adapter
-   * 
+   *
    * @param adapter - Adapter to use (Express, Fastify, etc.)
    * @param port - Port number (optional, defaults to options.port or 3000)
    * @param host - Host address (optional, defaults to options.host or '0.0.0.0')
    */
-  async listen(adapter: IAdapter<T>, port?: number, host?: string): Promise<ServerInfo> {
+  async listen(
+    adapter: IAdapter<T>,
+    port?: number,
+    host?: string,
+  ): Promise<ServerInfo> {
     const actualPort = port ?? this.options.port ?? 3000;
     const actualHost = host ?? this.options.host ?? '0.0.0.0';
 
@@ -214,7 +229,9 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
     const serverInfo = await adapter.start(actualPort, actualHost);
 
     this.logger.info(`🚀 Struktos application started`);
-    this.logger.info(`   ${serverInfo.protocol.toUpperCase()} server: ${serverInfo.url}`);
+    this.logger.info(
+      `   ${serverInfo.protocol.toUpperCase()} server: ${serverInfo.url}`,
+    );
 
     // Start background services
     for (const service of this.backgroundServices) {
@@ -230,7 +247,9 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
    */
   async run(_port?: number): Promise<ServerInfo[]> {
     if (this.adapters.length === 0) {
-      throw new Error('No adapters registered. Use addAdapter() before calling run()');
+      throw new Error(
+        'No adapters registered. Use addAdapter() before calling run()',
+      );
     }
 
     // Create host
@@ -334,8 +353,10 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
           timestamp: new Date(),
         };
 
-        const response = await this.exceptionFilters.catch(exceptionContext as ExceptionContext);
-        
+        const response = await this.exceptionFilters.catch(
+          exceptionContext as ExceptionContext,
+        );
+
         ctx.response.status = response.status;
         ctx.response.headers = { ...ctx.response.headers, ...response.headers };
         ctx.response.body = response.body;
@@ -363,7 +384,10 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
    * Check if application is running
    */
   isRunning(): boolean {
-    return this.adapters.some((a) => a.isRunning()) || this.host?.status === 'running';
+    return (
+      this.adapters.some((a) => a.isRunning()) ||
+      this.host?.status === 'running'
+    );
   }
 }
 
@@ -372,9 +396,12 @@ export class StruktosApp<T extends StruktosContextData = StruktosContextData> {
 /**
  * StruktosAppBuilder - Fluent builder for StruktosApp
  */
-export class StruktosAppBuilder<T extends StruktosContextData = StruktosContextData> {
+export class StruktosAppBuilder<
+  T extends StruktosContextData = StruktosContextData,
+> {
   private options: StruktosAppOptions = {};
-  private middlewares: Array<IStruktosMiddleware<T> | MiddlewareFunction<T>> = [];
+  private middlewares: Array<IStruktosMiddleware<T> | MiddlewareFunction<T>> =
+    [];
   private filters: IExceptionFilter<T>[] = [];
   private services: IBackgroundService[] = [];
 
@@ -468,7 +495,9 @@ export class StruktosAppBuilder<T extends StruktosContextData = StruktosContextD
 /**
  * Create a new application builder
  */
-export function createAppBuilder<T extends StruktosContextData = StruktosContextData>(): StruktosAppBuilder<T> {
+export function createAppBuilder<
+  T extends StruktosContextData = StruktosContextData,
+>(): StruktosAppBuilder<T> {
   return new StruktosAppBuilder<T>();
 }
 
@@ -478,7 +507,7 @@ export function createAppBuilder<T extends StruktosContextData = StruktosContext
  * Quick start helper - creates and configures an app in one call
  */
 export function createApp<T extends StruktosContextData = StruktosContextData>(
-  options?: StruktosAppOptions
+  options?: StruktosAppOptions,
 ): StruktosApp<T> {
   return StruktosApp.create<T>(options);
 }

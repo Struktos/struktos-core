@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Platform Types
- * 
+ *
  * Core type definitions for Struktos platform abstraction layer.
  * These types enable protocol-agnostic request/response handling.
  */
@@ -44,7 +44,12 @@ export enum HttpStatus {
 /**
  * Protocol type for multi-protocol support
  */
-export type ProtocolType = 'http' | 'grpc' | 'websocket' | 'graphql' | 'message-queue';
+export type ProtocolType =
+  | 'http'
+  | 'grpc'
+  | 'websocket'
+  | 'graphql'
+  | 'message-queue';
 
 /**
  * Abstract Response - Protocol-agnostic response structure
@@ -268,7 +273,7 @@ export function createErrorResponse(
   status: number,
   error: string,
   message: string,
-  details?: any
+  details?: any,
 ): StruktosResponse<ErrorResponse> {
   return {
     status,

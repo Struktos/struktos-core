@@ -9,7 +9,10 @@
  * @see {@link https://martinfowler.com/bliki/CQRS.html | CQRS Pattern}
  */
 
-import type { IContext, StruktosContextData } from '../../domain/context/IContext';
+import type {
+  IContext,
+  StruktosContextData,
+} from '../../domain/context/IContext';
 
 /**
  * Base query metadata interface.
@@ -211,7 +214,14 @@ export abstract class QueryBase<TResult = unknown> implements IQuery<TResult> {
    *
    * @param options - Optional metadata overrides
    */
-  protected constructor(options?: Partial<Pick<QueryMetadata, 'cacheable' | 'cacheTTL' | 'cacheKey' | 'correlationId'>>) {
+  protected constructor(
+    options?: Partial<
+      Pick<
+        QueryMetadata,
+        'cacheable' | 'cacheTTL' | 'cacheKey' | 'correlationId'
+      >
+    >,
+  ) {
     this.metadata = {
       queryId: this.generateId(),
       queryType: this.constructor.name,
@@ -274,7 +284,9 @@ export abstract class QueryBase<TResult = unknown> implements IQuery<TResult> {
  * const result = await queryBus.execute(query, options);
  * ```
  */
-export interface QueryExecutionOptions<TContext extends StruktosContextData = StruktosContextData> {
+export interface QueryExecutionOptions<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Maximum time in milliseconds to wait for query execution.
    * @defaultValue 10000 (10 seconds)
@@ -536,7 +548,9 @@ export interface PaginatedResult<T> {
  * }
  * ```
  */
-export interface IQueryBus<TContext extends StruktosContextData = StruktosContextData> {
+export interface IQueryBus<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Execute a query and return its result.
    *
@@ -567,7 +581,7 @@ export interface IQueryBus<TContext extends StruktosContextData = StruktosContex
    */
   execute<TResult>(
     query: IQuery<TResult>,
-    options?: QueryExecutionOptions<TContext>
+    options?: QueryExecutionOptions<TContext>,
   ): Promise<TResult>;
 
   /**
@@ -596,7 +610,7 @@ export interface IQueryBus<TContext extends StruktosContextData = StruktosContex
    */
   executeWithMetrics<TResult>(
     query: IQuery<TResult>,
-    options?: QueryExecutionOptions<TContext>
+    options?: QueryExecutionOptions<TContext>,
   ): Promise<QueryResult<TResult>>;
 
   /**
@@ -615,7 +629,7 @@ export interface IQueryBus<TContext extends StruktosContextData = StruktosContex
    */
   register<TQuery extends IQuery<TResult>, TResult>(
     queryType: string | (new (...args: unknown[]) => TQuery),
-    handler: IQueryHandler<TQuery, TResult>
+    handler: IQueryHandler<TQuery, TResult>,
   ): void;
 
   /**
@@ -631,7 +645,9 @@ export interface IQueryBus<TContext extends StruktosContextData = StruktosContex
    * }
    * ```
    */
-  hasHandler(queryType: string | (new (...args: unknown[]) => IQuery<unknown>)): boolean;
+  hasHandler(
+    queryType: string | (new (...args: unknown[]) => IQuery<unknown>),
+  ): boolean;
 
   /**
    * Invalidate cached results for a specific query type or key.
@@ -651,7 +667,7 @@ export interface IQueryBus<TContext extends StruktosContextData = StruktosContex
    * ```
    */
   invalidateCache(
-    queryTypeOrKey: string | (new (...args: unknown[]) => IQuery<unknown>)
+    queryTypeOrKey: string | (new (...args: unknown[]) => IQuery<unknown>),
   ): Promise<void>;
 }
 
@@ -662,7 +678,10 @@ export interface IQueryBus<TContext extends StruktosContextData = StruktosContex
  * @template TQuery - The query type this handler processes
  * @template TResult - The type of result returned by the handler
  */
-export interface IQueryHandler<TQuery extends IQuery<TResult>, TResult = unknown> {
+export interface IQueryHandler<
+  TQuery extends IQuery<TResult>,
+  TResult = unknown,
+> {
   /**
    * Execute the query and return a result.
    *

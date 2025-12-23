@@ -259,7 +259,9 @@ export class AndSpecification<T> extends SpecificationBase<T> {
    * @returns True if both specifications are satisfied
    */
   isSatisfiedBy(candidate: T): boolean {
-    return this.left.isSatisfiedBy(candidate) && this.right.isSatisfiedBy(candidate);
+    return (
+      this.left.isSatisfiedBy(candidate) && this.right.isSatisfiedBy(candidate)
+    );
   }
 }
 
@@ -307,7 +309,9 @@ export class OrSpecification<T> extends SpecificationBase<T> {
    * @returns True if either specification is satisfied
    */
   isSatisfiedBy(candidate: T): boolean {
-    return this.left.isSatisfiedBy(candidate) || this.right.isSatisfiedBy(candidate);
+    return (
+      this.left.isSatisfiedBy(candidate) || this.right.isSatisfiedBy(candidate)
+    );
   }
 }
 
@@ -427,7 +431,10 @@ export class NotSpecification<T> extends SpecificationBase<T> {
  * }
  * ```
  */
-export interface IQueryableSpecification<T, TExpression = unknown> extends ISpecification<T> {
+export interface IQueryableSpecification<
+  T,
+  TExpression = unknown,
+> extends ISpecification<T> {
   /**
    * Convert this specification to a query expression.
    *

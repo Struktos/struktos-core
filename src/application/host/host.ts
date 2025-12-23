@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Host Interface
- * 
+ *
  * ASP.NET Core-inspired hosting abstraction for Struktos platform.
  * Provides a unified way to configure and run applications.
  */
@@ -58,31 +58,38 @@ export interface HostLifecycle {
 /**
  * Host status
  */
-export type HostStatus = 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+export type HostStatus =
+  | 'stopped'
+  | 'starting'
+  | 'running'
+  | 'stopping'
+  | 'error';
 
 /**
  * IHost - Application host interface
- * 
+ *
  * The host is responsible for:
  * - Managing application lifecycle
  * - Coordinating multiple adapters
  * - Handling graceful shutdown
  * - Running background services
- * 
+ *
  * @example
  * ```typescript
  * const host = new StruktosHost({
  *   name: 'my-api',
  *   gracefulShutdown: true
  * });
- * 
+ *
  * host.addAdapter(expressAdapter);
  * host.addAdapter(grpcAdapter);
- * 
+ *
  * await host.start();
  * ```
  */
-export interface IHost<T extends StruktosContextData = StruktosContextData> extends HostLifecycle {
+export interface IHost<
+  T extends StruktosContextData = StruktosContextData,
+> extends HostLifecycle {
   /**
    * Host name
    */
@@ -233,7 +240,9 @@ export const consoleLogger: ILogger = {
 /**
  * StruktosHost - Default host implementation
  */
-export class StruktosHost<T extends StruktosContextData = StruktosContextData> implements IHost<T> {
+export class StruktosHost<
+  T extends StruktosContextData = StruktosContextData,
+> implements IHost<T> {
   readonly name: string;
   private _status: HostStatus = 'stopped';
   private adapters: IAdapter<T>[] = [];
@@ -289,7 +298,7 @@ export class StruktosHost<T extends StruktosContextData = StruktosContextData> i
         this.adapters.map(async (adapter) => {
           this.logger.info(`Starting adapter: ${adapter.name}`);
           return adapter.start();
-        })
+        }),
       );
 
       // Start background services
@@ -297,7 +306,7 @@ export class StruktosHost<T extends StruktosContextData = StruktosContextData> i
         this.backgroundServices.map(async (service) => {
           this.logger.info(`Starting service: ${service.name}`);
           await service.start();
-        })
+        }),
       );
 
       this._status = 'running';
@@ -326,7 +335,7 @@ export class StruktosHost<T extends StruktosContextData = StruktosContextData> i
       await Promise.race([
         this.performShutdown(),
         new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error('Shutdown timeout')), timeout)
+          setTimeout(() => reject(new Error('Shutdown timeout')), timeout),
         ),
       ]);
 
@@ -345,7 +354,7 @@ export class StruktosHost<T extends StruktosContextData = StruktosContextData> i
       this.backgroundServices.map(async (service) => {
         this.logger.info(`Stopping service: ${service.name}`);
         await service.stop();
-      })
+      }),
     );
 
     // Then stop adapters
@@ -353,7 +362,7 @@ export class StruktosHost<T extends StruktosContextData = StruktosContextData> i
       this.adapters.map(async (adapter) => {
         this.logger.info(`Stopping adapter: ${adapter.name}`);
         await adapter.stop();
-      })
+      }),
     );
   }
 
@@ -378,7 +387,7 @@ export class StruktosHost<T extends StruktosContextData = StruktosContextData> i
  * Create a new host
  */
 export function createHost<T extends StruktosContextData = StruktosContextData>(
-  options?: HostOptions
+  options?: HostOptions,
 ): StruktosHost<T> {
   return new StruktosHost<T>(options);
 }

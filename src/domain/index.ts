@@ -33,7 +33,7 @@ export * from './specification';
 
 /**
  * Context exports
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -41,21 +41,18 @@ export * from './specification';
  *   RequestContext,
  *   StruktosContextData
  * } from '@struktos/core/domain';
- * 
+ *
  * await RequestContext.run({ traceId: 'trace-123' }, async () => {
  *   const ctx = RequestContext.current();
  *   console.log(ctx?.get('traceId'));
  * });
  * ```
  */
-export type {
-  IContext,
-  StruktosContextData,
-} from './context';
+export type { IContext, StruktosContextData } from './context';
 
 /**
  * Domain Events exports
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -64,13 +61,13 @@ export type {
  *   IEventBus,
  *   IEventHandler
  * } from '@struktos/core/domain';
- * 
+ *
  * class OrderCreatedEvent implements IDomainEvent<OrderCreatedPayload> {
  *   eventName = 'OrderCreated';
  *   metadata = { eventId: 'evt-123', occurredAt: new Date().toISOString() };
  *   constructor(public readonly payload: OrderCreatedPayload) {}
  * }
- * 
+ *
  * class Order extends AggregateRoot {
  *   static create(data: CreateOrderData): Order {
  *     const order = new Order(data);
@@ -93,7 +90,7 @@ export type { AggregateRoot as AggregateRootBase } from './events';
 
 /**
  * Repository exports
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -113,14 +110,14 @@ export { TransactionState } from './repository';
 
 /**
  * Specification exports
- * 
+ *
  * @example
  * ```typescript
  * import {
  *   ISpecification,
  *   SpecificationBase
  * } from '@struktos/core/domain';
- * 
+ *
  * class ActiveUserSpec extends SpecificationBase<User> {
  *   isSatisfiedBy(user: User): boolean {
  *     return user.isActive && !user.isDeleted;
@@ -128,6 +125,4 @@ export { TransactionState } from './repository';
  * }
  * ```
  */
-export type {
-  ISpecification,
-} from './specification';
+export type { ISpecification } from './specification';

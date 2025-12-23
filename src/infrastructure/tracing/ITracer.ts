@@ -9,7 +9,10 @@
  * @see {@link https://opentelemetry.io/docs/concepts/signals/traces/ | OpenTelemetry Traces}
  */
 
-import type { IContext, StruktosContextData } from '../../domain/context/IContext';
+import type {
+  IContext,
+  StruktosContextData,
+} from '../../domain/context/IContext';
 
 /**
  * Span status codes following OpenTelemetry conventions.
@@ -67,7 +70,14 @@ export enum SpanKind {
  */
 export interface SpanAttributes {
   /** Any string attribute */
-  [key: string]: string | number | boolean | string[] | number[] | boolean[] | undefined;
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | string[]
+    | number[]
+    | boolean[]
+    | undefined;
 }
 
 /**
@@ -393,7 +403,11 @@ export interface ISpan {
    * span.addEvent('db.query.complete', { 'rows.returned': 42 });
    * ```
    */
-  addEvent(name: string, attributes?: SpanAttributes, timestamp?: number): ISpan;
+  addEvent(
+    name: string,
+    attributes?: SpanAttributes,
+    timestamp?: number,
+  ): ISpan;
 
   /**
    * Record an exception that occurred during the span.
@@ -535,7 +549,9 @@ export interface ISpan {
  * const span = tracer.startSpan('handleRequest', { parent: context });
  * ```
  */
-export interface ITracer<TContext extends StruktosContextData = StruktosContextData> {
+export interface ITracer<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Name of this tracer instance.
    * Usually the service or library name.
@@ -609,7 +625,7 @@ export interface ITracer<TContext extends StruktosContextData = StruktosContextD
   withSpan<T>(
     name: string,
     fn: (span: ISpan) => Promise<T> | T,
-    options?: SpanOptions
+    options?: SpanOptions,
   ): Promise<T>;
 
   /**
@@ -687,7 +703,7 @@ export interface ITracer<TContext extends StruktosContextData = StruktosContextD
    */
   inject<TCarrier extends Record<string, string>>(
     carrier: TCarrier,
-    context?: TraceContext
+    context?: TraceContext,
   ): TCarrier;
 
   /**
@@ -710,7 +726,7 @@ export interface ITracer<TContext extends StruktosContextData = StruktosContextD
    * ```
    */
   extract<TCarrier extends Record<string, string | string[] | undefined>>(
-    carrier: TCarrier
+    carrier: TCarrier,
   ): TraceContext | undefined;
 
   /**
@@ -757,7 +773,9 @@ export interface ITracer<TContext extends StruktosContextData = StruktosContextD
  * });
  * ```
  */
-export interface ITracerFactory<TContext extends StruktosContextData = StruktosContextData> {
+export interface ITracerFactory<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Create a new tracer instance.
    *

@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Port Module
- * 
+ *
  * Application adapters
  */
 

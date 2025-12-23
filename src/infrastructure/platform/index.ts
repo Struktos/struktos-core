@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Platform Module
- * 
+ *
  * Platform abstractions for middleware, request/response
  */
 

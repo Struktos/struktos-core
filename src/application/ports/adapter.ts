@@ -1,13 +1,20 @@
 /**
  * @struktos/core - Adapter Interface
- * 
+ *
  * Adapter abstraction for integrating Struktos with different frameworks
  * and protocols (Express, Fastify, gRPC, Kafka, RabbitMQ, etc.)
  */
 
 import { StruktosContextData } from '../../domain/context';
-import { StruktosRequest, StruktosResponse, ProtocolType } from '../../infrastructure/platform/types';
-import { MiddlewareContext, IStruktosMiddleware } from '../../infrastructure/platform/middleware';
+import {
+  StruktosRequest,
+  StruktosResponse,
+  ProtocolType,
+} from '../../infrastructure/platform/types';
+import {
+  MiddlewareContext,
+  IStruktosMiddleware,
+} from '../../infrastructure/platform/middleware';
 
 /**
  * Adapter configuration options
@@ -74,19 +81,19 @@ export interface ServerInfo {
 
 /**
  * IAdapter - Framework/Protocol adapter interface
- * 
+ *
  * Adapters bridge Struktos with specific frameworks or protocols.
  * Each adapter is responsible for:
  * - Transforming framework-specific requests to StruktosRequest
  * - Transforming StruktosResponse to framework-specific responses
  * - Managing the framework's lifecycle
- * 
+ *
  * @example
  * ```typescript
  * class ExpressAdapter implements IAdapter {
  *   private app: Express;
  *   private server: Server | null = null;
- *   
+ *
  *   async start(port: number): Promise<ServerInfo> {
  *     return new Promise((resolve) => {
  *       this.server = this.app.listen(port, () => {
@@ -99,14 +106,14 @@ export interface ServerInfo {
  *       });
  *     });
  *   }
- *   
+ *
  *   // ... other methods
  * }
  * ```
  */
-export interface IAdapter<T extends StruktosContextData = StruktosContextData>
-  extends AdapterLifecycle
-{
+export interface IAdapter<
+  T extends StruktosContextData = StruktosContextData,
+> extends AdapterLifecycle {
   /**
    * Adapter name
    */
@@ -119,14 +126,14 @@ export interface IAdapter<T extends StruktosContextData = StruktosContextData>
 
   /**
    * Initialize the adapter with middleware pipeline
-   * 
+   *
    * @param middlewares - Array of middlewares to apply
    */
   init(middlewares: IStruktosMiddleware<T>[]): Promise<void>;
 
   /**
    * Start the adapter (begin listening for requests)
-   * 
+   *
    * @param port - Port number (for HTTP-based protocols)
    * @param host - Host address
    * @returns Server information
@@ -167,9 +174,9 @@ export interface IAdapter<T extends StruktosContextData = StruktosContextData>
 /**
  * Base adapter class with common functionality
  */
-export abstract class AdapterBase<T extends StruktosContextData = StruktosContextData>
-  implements IAdapter<T>
-{
+export abstract class AdapterBase<
+  T extends StruktosContextData = StruktosContextData,
+> implements IAdapter<T> {
   abstract readonly name: string;
   abstract readonly protocol: ProtocolType;
 
@@ -226,9 +233,9 @@ export abstract class AdapterBase<T extends StruktosContextData = StruktosContex
 /**
  * HTTP Adapter interface (Express, Fastify, Koa, etc.)
  */
-export interface IHttpAdapter<T extends StruktosContextData = StruktosContextData>
-  extends IAdapter<T>
-{
+export interface IHttpAdapter<
+  T extends StruktosContextData = StruktosContextData,
+> extends IAdapter<T> {
   /**
    * Use a native middleware
    */
@@ -248,9 +255,9 @@ export interface IHttpAdapter<T extends StruktosContextData = StruktosContextDat
 /**
  * gRPC Adapter interface
  */
-export interface IGrpcAdapter<T extends StruktosContextData = StruktosContextData>
-  extends IAdapter<T>
-{
+export interface IGrpcAdapter<
+  T extends StruktosContextData = StruktosContextData,
+> extends IAdapter<T> {
   /**
    * Add a gRPC service
    */
@@ -265,13 +272,16 @@ export interface IGrpcAdapter<T extends StruktosContextData = StruktosContextDat
 /**
  * Message Queue Adapter interface (Kafka, RabbitMQ, etc.)
  */
-export interface IMessageQueueAdapter<T extends StruktosContextData = StruktosContextData>
-  extends IAdapter<T>
-{
+export interface IMessageQueueAdapter<
+  T extends StruktosContextData = StruktosContextData,
+> extends IAdapter<T> {
   /**
    * Subscribe to a topic/queue
    */
-  subscribe(topic: string, handler: (message: any) => Promise<void>): Promise<void>;
+  subscribe(
+    topic: string,
+    handler: (message: any) => Promise<void>,
+  ): Promise<void>;
 
   /**
    * Publish a message
@@ -287,9 +297,9 @@ export interface IMessageQueueAdapter<T extends StruktosContextData = StruktosCo
 /**
  * WebSocket Adapter interface
  */
-export interface IWebSocketAdapter<T extends StruktosContextData = StruktosContextData>
-  extends IAdapter<T>
-{
+export interface IWebSocketAdapter<
+  T extends StruktosContextData = StruktosContextData,
+> extends IAdapter<T> {
   /**
    * Handle new connection
    */
@@ -309,6 +319,6 @@ export interface IWebSocketAdapter<T extends StruktosContextData = StruktosConte
 /**
  * Adapter factory function type
  */
-export type AdapterFactory<T extends StruktosContextData = StruktosContextData> = (
-  options?: AdapterOptions
-) => IAdapter<T>;
+export type AdapterFactory<
+  T extends StruktosContextData = StruktosContextData,
+> = (options?: AdapterOptions) => IAdapter<T>;

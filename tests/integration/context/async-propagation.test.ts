@@ -1,12 +1,12 @@
 /**
  * @file Context Propagation Integration Tests
  * @description Validates AsyncLocalStorage propagates context across async boundaries
- * 
+ *
  * WHY THIS MATTERS FOR HEXAGONAL ARCHITECTURE:
  * - Request context (traceId, userId) must flow through all layers
  * - No need to pass context as parameters (reduces coupling)
  * - AsyncLocalStorage enables "ambient context" pattern
- * 
+ *
  * CRITICAL GUARANTEES:
  * ✅ Context available in Promise.then() chains
  * ✅ Context available in Promise.all() parallel operations
@@ -46,7 +46,7 @@ describe('Context Propagation - AsyncLocalStorage', () => {
               expect(ctx?.get('traceId')).toBe('trace-abc-123');
               expect(ctx?.get('userId')).toBe('user-456');
             });
-        }
+        },
       );
 
       expect(capturedTraceId).toBe('trace-abc-123');
@@ -136,19 +136,19 @@ describe('Context Propagation - AsyncLocalStorage', () => {
             setTimeout(() => {
               capturedValues.push(RequestContext.current()?.get('traceId'));
               resolve();
-            }, 50)
+            }, 50),
           ),
           new Promise<void>((resolve) =>
             setTimeout(() => {
               capturedValues.push(RequestContext.current()?.get('traceId'));
               resolve();
-            }, 30)
+            }, 30),
           ),
           new Promise<void>((resolve) =>
             setTimeout(() => {
               capturedValues.push(RequestContext.current()?.get('traceId'));
               resolve();
-            }, 10)
+            }, 10),
           ),
         ]);
       });
@@ -166,12 +166,12 @@ describe('Context Propagation - AsyncLocalStorage', () => {
             setTimeout(() => {
               capturedValue = RequestContext.current()?.get('traceId');
               resolve();
-            }, 10)
+            }, 10),
           ),
           new Promise<void>((resolve) =>
             setTimeout(() => {
               resolve();
-            }, 50)
+            }, 50),
           ),
         ]);
       });
@@ -218,25 +218,30 @@ describe('Context Propagation - AsyncLocalStorage', () => {
     it('should propagate context through nested setTimeouts', async () => {
       const capturedValues: (string | undefined)[] = [];
 
-      await RequestContext.run({ traceId: 'trace-nested-timeout' }, async () => {
-        await new Promise<void>((resolve) => {
-          setTimeout(() => {
-            capturedValues.push(RequestContext.current()?.get('traceId'));
-
+      await RequestContext.run(
+        { traceId: 'trace-nested-timeout' },
+        async () => {
+          await new Promise<void>((resolve) => {
             setTimeout(() => {
               capturedValues.push(RequestContext.current()?.get('traceId'));
 
               setTimeout(() => {
                 capturedValues.push(RequestContext.current()?.get('traceId'));
-                resolve();
+
+                setTimeout(() => {
+                  capturedValues.push(RequestContext.current()?.get('traceId'));
+                  resolve();
+                }, 10);
               }, 10);
             }, 10);
-          }, 10);
-        });
-      });
+          });
+        },
+      );
 
       expect(capturedValues).toHaveLength(3);
-      expect(capturedValues.every((v) => v === 'trace-nested-timeout')).toBe(true);
+      expect(capturedValues.every((v) => v === 'trace-nested-timeout')).toBe(
+        true,
+      );
     });
   });
 
@@ -309,7 +314,7 @@ describe('Context Propagation - AsyncLocalStorage', () => {
         },
         async () => {
           await validateUser();
-        }
+        },
       );
 
       expect(capturedContexts).toHaveLength(2);
@@ -327,7 +332,8 @@ describe('Context Propagation - AsyncLocalStorage', () => {
 
   describe('Context Isolation - Concurrent Requests', () => {
     it('should isolate context between concurrent requests', async () => {
-      const results: Array<{ requestId: string; traceId: string | undefined }> = [];
+      const results: Array<{ requestId: string; traceId: string | undefined }> =
+        [];
 
       // Simulate 3 concurrent requests
       await Promise.all([
@@ -371,12 +377,14 @@ describe('Context Propagation - AsyncLocalStorage', () => {
 
       const promises = Array.from({ length: 100 }, (_, i) =>
         RequestContext.run({ traceId: `trace-${i}` }, async () => {
-          await new Promise((resolve) => setTimeout(resolve, Math.random() * 50));
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.random() * 50),
+          );
           results.push({
             index: i,
             traceId: RequestContext.current()?.get('traceId'),
           });
-        })
+        }),
       );
 
       await Promise.all(promises);
@@ -485,7 +493,7 @@ describe('Context Propagation - AsyncLocalStorage', () => {
       const httpMiddleware = async (
         requestId: string,
         userId: string,
-        handler: () => Promise<any>
+        handler: () => Promise<any>,
       ) => {
         return await RequestContext.run(
           {
@@ -494,7 +502,7 @@ describe('Context Propagation - AsyncLocalStorage', () => {
             requestId,
             ip: '192.168.1.100',
           },
-          handler
+          handler,
         );
       };
 
@@ -547,8 +555,8 @@ describe('Context Propagation - AsyncLocalStorage', () => {
               requestId: ctx?.get('requestId'),
               userId: ctx?.get('userId'),
             };
-          })
-        )
+          }),
+        ),
       );
 
       expect(results).toHaveLength(3);

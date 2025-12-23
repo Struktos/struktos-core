@@ -4,7 +4,7 @@
  * Struktos Core provides enterprise-grade abstractions for building
  * scalable, maintainable Node.js applications following Hexagonal
  * Architecture and Domain-Driven Design principles.
- * * 
+ * *
  *
  * ## Architecture Layers
  * ... (TSDoc Description Remains Unchanged) ...
@@ -18,14 +18,14 @@
 // ============================================================================
 
 // ** 1. Context System (Domain Core Data Carrier) **
-export { 
-  IContext, 
-  StruktosContextData, 
+export {
+  IContext,
+  StruktosContextData,
   StruktosContext,
-  RequestContext, 
-  getCurrentContext, 
+  RequestContext,
+  getCurrentContext,
   tryGetCurrentContext,
-  RequireContext 
+  RequireContext,
 } from './domain/context';
 
 // ** 2. Exception Types (Domain/Business Rules Errors) **
@@ -60,7 +60,6 @@ export type {
   IEventHandler,
 } from './domain/events';
 export { AggregateRoot } from './domain/events';
-
 
 /**
  * Domain layer containing core business rules (Entities, Repositories, UoW, Specifications).
@@ -115,7 +114,6 @@ export { ServiceScope } from './application/di';
 export { Injectable, Inject } from './application/di';
 export { DependencyResolutionError } from './application/di';
 
-
 /**
  * Application layer containing use case orchestration (CQRS, Handlers, Host).
  */
@@ -163,13 +161,12 @@ export {
 } from './infrastructure/pipeline';
 
 // ** 4. Cache (Specific Infrastructure Adapter) **
-export { 
-  CacheManager, 
+export {
+  CacheManager,
   CacheStats,
-  globalCache, 
-  createCacheManager 
+  globalCache,
+  createCacheManager,
 } from './infrastructure/cache';
-
 
 /**
  * Infrastructure layer containing external concerns (Platform, Tracing, Resilience).
@@ -181,15 +178,41 @@ export * from './infrastructure'; // Re-exports from all files in './infrastruct
 // ============================================================================
 
 // Domain - Unit of Work & Spec
-export type { IUnitOfWork, IUnitOfWorkFactory, TransactionOptions, TransactionResult } from './domain/repository/IUnitOfWork';
-export type { ISpecification, IQueryableSpecification } from './domain/specification/ISpecification';
+export type {
+  IUnitOfWork,
+  IUnitOfWorkFactory,
+  TransactionOptions,
+  TransactionResult,
+} from './domain/repository/IUnitOfWork';
+export type {
+  ISpecification,
+  IQueryableSpecification,
+} from './domain/specification/ISpecification';
 
 // Application - CQRS
-export type { ICommand, IQuery, ICommandHandler, IQueryHandler, ICommandBus, IQueryBus, HandlerContext, IPipelineBehavior } from './application/cqrs';
+export type {
+  ICommand,
+  IQuery,
+  ICommandHandler,
+  IQueryHandler,
+  ICommandBus,
+  IQueryBus,
+  HandlerContext,
+  IPipelineBehavior,
+} from './application/cqrs';
 
 // Infrastructure - Tracing & Resilience
-export type { ITracer, ISpan, TraceContext } from './infrastructure/tracing/ITracer';
-export type { IResiliencePolicy, ICircuitBreakerPolicy, IPolicyBuilder, PolicyExecutionResult } from './infrastructure/resilience/IResiliencePolicy';
+export type {
+  ITracer,
+  ISpan,
+  TraceContext,
+} from './infrastructure/tracing/ITracer';
+export type {
+  IResiliencePolicy,
+  ICircuitBreakerPolicy,
+  IPolicyBuilder,
+  PolicyExecutionResult,
+} from './infrastructure/resilience/IResiliencePolicy';
 
 // ==================== Default Export ====================
 export { StruktosApp as default } from './application/host';

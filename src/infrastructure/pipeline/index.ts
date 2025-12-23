@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Pipeline Module
- * 
+ *
  * Middleware pipeline utilities and composition
  */
 

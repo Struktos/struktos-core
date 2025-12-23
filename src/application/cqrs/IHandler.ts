@@ -9,7 +9,10 @@
  * @see {@link https://martinfowler.com/bliki/CQRS.html | CQRS Pattern}
  */
 
-import type { IContext, StruktosContextData } from '../../domain/context/IContext';
+import type {
+  IContext,
+  StruktosContextData,
+} from '../../domain/context/IContext';
 import type { ICommand, CommandMetadata } from './ICommand';
 import type { IQuery, QueryMetadata } from './IQuery';
 
@@ -39,7 +42,9 @@ import type { IQuery, QueryMetadata } from './IQuery';
  * }
  * ```
  */
-export interface HandlerContext<TContext extends StruktosContextData = StruktosContextData> {
+export interface HandlerContext<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Trace ID for distributed tracing.
    */
@@ -208,7 +213,10 @@ export interface HandlerContext<TContext extends StruktosContextData = StruktosC
  * }
  * ```
  */
-export interface ICommandHandler<TCommand extends ICommand<TResult>, TResult = void> {
+export interface ICommandHandler<
+  TCommand extends ICommand<TResult>,
+  TResult = void,
+> {
   /**
    * Execute the command and return a result.
    *
@@ -344,7 +352,10 @@ export interface ICommandHandler<TCommand extends ICommand<TResult>, TResult = v
  * }
  * ```
  */
-export interface IQueryHandler<TQuery extends IQuery<TResult>, TResult = unknown> {
+export interface IQueryHandler<
+  TQuery extends IQuery<TResult>,
+  TResult = unknown,
+> {
   /**
    * Execute the query and return a result.
    *
@@ -420,9 +431,10 @@ export interface IQueryHandler<TQuery extends IQuery<TResult>, TResult = unknown
  * }
  * ```
  */
-export abstract class CommandHandlerBase<TCommand extends ICommand<TResult>, TResult = void>
-  implements ICommandHandler<TCommand, TResult>
-{
+export abstract class CommandHandlerBase<
+  TCommand extends ICommand<TResult>,
+  TResult = void,
+> implements ICommandHandler<TCommand, TResult> {
   /**
    * Logger instance for this handler.
    */
@@ -447,7 +459,9 @@ export abstract class CommandHandlerBase<TCommand extends ICommand<TResult>, TRe
   async execute(command: TCommand, context?: HandlerContext): Promise<TResult> {
     const startTime = Date.now();
     const commandType = command.constructor.name || 'UnknownCommand';
-    const commandMetadata = (command as unknown as { metadata?: CommandMetadata }).metadata;
+    const commandMetadata = (
+      command as unknown as { metadata?: CommandMetadata }
+    ).metadata;
 
     this.logger.debug(`Executing ${commandType}`, {
       traceId: context?.traceId,
@@ -487,7 +501,10 @@ export abstract class CommandHandlerBase<TCommand extends ICommand<TResult>, TRe
    * @param context - Optional execution context
    * @returns Promise resolving to the command result
    */
-  protected abstract doExecute(command: TCommand, context?: HandlerContext): Promise<TResult>;
+  protected abstract doExecute(
+    command: TCommand,
+    context?: HandlerContext,
+  ): Promise<TResult>;
 
   /**
    * Validate the command before execution.
@@ -534,9 +551,10 @@ export abstract class CommandHandlerBase<TCommand extends ICommand<TResult>, TRe
  * }
  * ```
  */
-export abstract class QueryHandlerBase<TQuery extends IQuery<TResult>, TResult = unknown>
-  implements IQueryHandler<TQuery, TResult>
-{
+export abstract class QueryHandlerBase<
+  TQuery extends IQuery<TResult>,
+  TResult = unknown,
+> implements IQueryHandler<TQuery, TResult> {
   /**
    * Logger instance for this handler.
    */
@@ -561,7 +579,8 @@ export abstract class QueryHandlerBase<TQuery extends IQuery<TResult>, TResult =
   async execute(query: TQuery, context?: HandlerContext): Promise<TResult> {
     const startTime = Date.now();
     const queryType = query.constructor.name || 'UnknownQuery';
-    const queryMetadata = (query as unknown as { metadata?: QueryMetadata }).metadata;
+    const queryMetadata = (query as unknown as { metadata?: QueryMetadata })
+      .metadata;
 
     this.logger.debug(`Executing ${queryType}`, {
       traceId: context?.traceId,
@@ -597,7 +616,10 @@ export abstract class QueryHandlerBase<TQuery extends IQuery<TResult>, TResult =
    * @param context - Optional execution context
    * @returns Promise resolving to the query result
    */
-  protected abstract doExecute(query: TQuery, context?: HandlerContext): Promise<TResult>;
+  protected abstract doExecute(
+    query: TQuery,
+    context?: HandlerContext,
+  ): Promise<TResult>;
 
   /**
    * Get cache key for this query.
@@ -640,7 +662,11 @@ export interface IHandlerLogger {
   /**
    * Log error message.
    */
-  error(message: string, error?: Error, metadata?: Record<string, unknown>): void;
+  error(
+    message: string,
+    error?: Error,
+    metadata?: Record<string, unknown>,
+  ): void;
 }
 
 /**
@@ -669,7 +695,9 @@ export interface HandlerMetadata {
   /**
    * The command or query type this handler processes.
    */
-  handlerFor: string | (new (...args: unknown[]) => ICommand<unknown> | IQuery<unknown>);
+  handlerFor:
+    | string
+    | (new (...args: unknown[]) => ICommand<unknown> | IQuery<unknown>);
 
   /**
    * Handler type: 'command' or 'query'.
@@ -679,7 +707,11 @@ export interface HandlerMetadata {
   /**
    * Handler class reference.
    */
-  handlerClass: new (...args: unknown[]) => ICommandHandler<ICommand<unknown>, unknown> | IQueryHandler<IQuery<unknown>, unknown>;
+  handlerClass: new (
+    ...args: unknown[]
+  ) =>
+    | ICommandHandler<ICommand<unknown>, unknown>
+    | IQueryHandler<IQuery<unknown>, unknown>;
 }
 
 /**
@@ -745,7 +777,7 @@ export interface IPipelineBehavior<TRequest = unknown, TResponse = unknown> {
   handle(
     request: TRequest,
     next: () => Promise<TResponse>,
-    context?: HandlerContext
+    context?: HandlerContext,
   ): Promise<TResponse>;
 }
 

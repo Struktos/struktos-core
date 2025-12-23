@@ -1,6 +1,6 @@
 /**
  * @fileoverview Jest test setup and global utilities
- * 
+ *
  * Provides custom matchers and utility functions for tests.
  */
 
@@ -23,7 +23,7 @@ declare global {
        * @param expected Error constructor
        */
       toThrowErrorType(expected: new (...args: any[]) => Error): R;
-      
+
       /**
        * Check if array contains item matching predicate
        * @param predicate Function to test each item
@@ -41,7 +41,7 @@ declare global {
   function waitFor(
     condition: () => boolean,
     timeout?: number,
-    interval?: number
+    interval?: number,
   ): Promise<void>;
 
   /**
@@ -61,13 +61,14 @@ expect.extend({
    */
   toThrowErrorType(
     received: () => void,
-    expected: new (...args: any[]) => Error
+    expected: new (...args: any[]) => Error,
   ) {
     try {
       received();
       return {
         pass: false,
-        message: () => `Expected function to throw ${expected.name}, but it didn't throw`,
+        message: () =>
+          `Expected function to throw ${expected.name}, but it didn't throw`,
       };
     } catch (error) {
       const pass = error instanceof expected;
@@ -104,12 +105,12 @@ expect.extend({
 
 /**
  * Wait for a condition to be true with timeout
- * 
+ *
  * @param condition Function that returns boolean
  * @param timeout Maximum time to wait (default: 5000ms)
  * @param interval Check interval (default: 100ms)
  * @throws Error if timeout is reached
- * 
+ *
  * @example
  * ```typescript
  * await waitFor(() => eventBus.publishedEvents.length > 0, 2000, 50);
@@ -118,7 +119,7 @@ expect.extend({
 (global as any).waitFor = async (
   condition: () => boolean,
   timeout: number = 5000,
-  interval: number = 100
+  interval: number = 100,
 ): Promise<void> => {
   const startTime = Date.now();
   while (!condition()) {
@@ -131,9 +132,9 @@ expect.extend({
 
 /**
  * Sleep for specified milliseconds
- * 
+ *
  * @param ms Milliseconds to sleep
- * 
+ *
  * @example
  * ```typescript
  * await sleep(1000); // Sleep for 1 second

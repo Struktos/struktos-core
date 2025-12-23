@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Cache Manager
- * 
+ *
  * High-performance LRU cache with TTL support for enterprise applications.
  * Used for caching authentication tokens, permissions, and frequently accessed data.
  */
@@ -26,17 +26,17 @@ export interface CacheStats {
 
 /**
  * CacheManager - High-performance LRU cache with TTL
- * 
+ *
  * @template K - Key type
  * @template V - Value type
- * 
+ *
  * @example
  * ```typescript
  * const cache = new CacheManager<string, User>(1000);
- * 
+ *
  * // Cache with TTL
  * cache.set('user-123', user, 60000); // 60 seconds
- * 
+ *
  * // Get or set pattern
  * const user = await cache.getOrSet(
  *   'user-123',
@@ -80,7 +80,7 @@ export class CacheManager<K, V> {
 
   /**
    * Set a value in the cache
-   * 
+   *
    * @param key - Cache key
    * @param value - Value to cache
    * @param ttl - Time to live in milliseconds (optional)
@@ -154,12 +154,16 @@ export class CacheManager<K, V> {
 
   /**
    * Get or set pattern - gets from cache or computes and caches
-   * 
+   *
    * @param key - Cache key
    * @param factory - Function to compute value if not cached
    * @param ttl - Time to live in milliseconds (optional)
    */
-  async getOrSet(key: K, factory: () => V | Promise<V>, ttl?: number): Promise<V> {
+  async getOrSet(
+    key: K,
+    factory: () => V | Promise<V>,
+    ttl?: number,
+  ): Promise<V> {
     const cached = this.get(key);
     if (cached !== undefined) {
       return cached;
@@ -235,6 +239,8 @@ export const globalCache = new CacheManager<string, any>(10000);
 /**
  * Create a new cache manager with specified capacity
  */
-export function createCacheManager<K, V>(capacity: number = 1000): CacheManager<K, V> {
+export function createCacheManager<K, V>(
+  capacity: number = 1000,
+): CacheManager<K, V> {
   return new CacheManager<K, V>(capacity);
 }

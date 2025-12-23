@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Exception Module
- * 
+ *
  * Exception abstractions for exception handling
  */
 

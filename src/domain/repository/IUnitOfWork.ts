@@ -169,7 +169,10 @@ export interface TransactionResult {
  *
  * @template T - The repository interface type
  */
-export type RepositoryToken<T> = string | symbol | (new (...args: unknown[]) => T);
+export type RepositoryToken<T> =
+  | string
+  | symbol
+  | (new (...args: unknown[]) => T);
 
 /**
  * IUnitOfWork - Transaction management interface for domain operations.
@@ -225,7 +228,9 @@ export type RepositoryToken<T> = string | symbol | (new (...args: unknown[]) => 
  * });
  * ```
  */
-export interface IUnitOfWork<TContext extends StruktosContextData = StruktosContextData> {
+export interface IUnitOfWork<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Current state of the transaction.
    *
@@ -413,7 +418,7 @@ export interface IUnitOfWork<TContext extends StruktosContextData = StruktosCont
    */
   executeInTransaction<TResult>(
     callback: (unitOfWork: IUnitOfWork<TContext>) => Promise<TResult>,
-    options?: TransactionOptions
+    options?: TransactionOptions,
   ): Promise<TResult>;
 
   /**
@@ -547,7 +552,9 @@ export interface IUnitOfWork<TContext extends StruktosContextData = StruktosCont
  * }
  * ```
  */
-export interface IUnitOfWorkFactory<TContext extends StruktosContextData = StruktosContextData> {
+export interface IUnitOfWorkFactory<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Create a new Unit of Work instance.
    *

@@ -9,7 +9,10 @@
  * @see {@link https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/ | Resilient Microservices}
  */
 
-import type { IContext, StruktosContextData } from '../../domain/context/IContext';
+import type {
+  IContext,
+  StruktosContextData,
+} from '../../domain/context/IContext';
 
 /**
  * Policy execution result states.
@@ -64,7 +67,9 @@ export enum CircuitState {
  * });
  * ```
  */
-export interface PolicyExecutionContext<TContext extends StruktosContextData = StruktosContextData> {
+export interface PolicyExecutionContext<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Unique execution ID for this policy execution.
    */
@@ -240,7 +245,9 @@ export interface PolicyExecutionResult<T> {
  * });
  * ```
  */
-export interface IResiliencePolicy<TContext extends StruktosContextData = StruktosContextData> {
+export interface IResiliencePolicy<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Name of this policy for identification and logging.
    */
@@ -279,7 +286,7 @@ export interface IResiliencePolicy<TContext extends StruktosContextData = Strukt
    */
   execute<T>(
     task: (context: PolicyExecutionContext<TContext>) => Promise<T>,
-    context?: IContext<TContext>
+    context?: IContext<TContext>,
   ): Promise<T>;
 
   /**
@@ -313,7 +320,7 @@ export interface IResiliencePolicy<TContext extends StruktosContextData = Strukt
    */
   executeWithResult<T>(
     task: (context: PolicyExecutionContext<TContext>) => Promise<T>,
-    context?: IContext<TContext>
+    context?: IContext<TContext>,
   ): Promise<PolicyExecutionResult<T>>;
 
   /**
@@ -362,7 +369,10 @@ export interface IResiliencePolicy<TContext extends StruktosContextData = Strukt
    * ```
    */
   withFallback<T>(
-    fallback: (error: Error, context: PolicyExecutionContext<TContext>) => Promise<T> | T
+    fallback: (
+      error: Error,
+      context: PolicyExecutionContext<TContext>,
+    ) => Promise<T> | T,
   ): IResiliencePolicy<TContext>;
 
   /**
@@ -564,7 +574,11 @@ export interface RetryPolicyOptions {
   /**
    * Callback invoked before each retry.
    */
-  onRetry?: (error: Error, attemptNumber: number, delay: number) => void | Promise<void>;
+  onRetry?: (
+    error: Error,
+    attemptNumber: number,
+    delay: number,
+  ) => void | Promise<void>;
 }
 
 /**
@@ -734,7 +748,9 @@ export interface BulkheadOptions {
  * };
  * ```
  */
-export interface RateLimitOptions<TContext extends StruktosContextData = StruktosContextData> {
+export interface RateLimitOptions<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Maximum requests allowed in the window.
    */
@@ -779,8 +795,9 @@ export interface RateLimitOptions<TContext extends StruktosContextData = Strukto
  * circuitBreaker.isolate();
  * ```
  */
-export interface ICircuitBreakerPolicy<TContext extends StruktosContextData = StruktosContextData>
-  extends IResiliencePolicy<TContext> {
+export interface ICircuitBreakerPolicy<
+  TContext extends StruktosContextData = StruktosContextData,
+> extends IResiliencePolicy<TContext> {
   /**
    * Get the current circuit state.
    *
@@ -836,7 +853,9 @@ export interface ICircuitBreakerPolicy<TContext extends StruktosContextData = St
  * const result = await policy.execute(fetchData);
  * ```
  */
-export interface IPolicyBuilder<TContext extends StruktosContextData = StruktosContextData> {
+export interface IPolicyBuilder<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Add a retry policy.
    */
@@ -866,7 +885,10 @@ export interface IPolicyBuilder<TContext extends StruktosContextData = StruktosC
    * Add a fallback.
    */
   fallback<T>(
-    fallback: (error: Error, context: PolicyExecutionContext<TContext>) => Promise<T> | T
+    fallback: (
+      error: Error,
+      context: PolicyExecutionContext<TContext>,
+    ) => Promise<T> | T,
   ): IPolicyBuilder<TContext>;
 
   /**
@@ -897,7 +919,9 @@ export type PolicyEventType =
 /**
  * Policy event for monitoring.
  */
-export interface PolicyEvent<TContext extends StruktosContextData = StruktosContextData> {
+export interface PolicyEvent<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Event type.
    */
@@ -939,9 +963,9 @@ export interface PolicyEvent<TContext extends StruktosContextData = StruktosCont
 /**
  * Policy event listener function type.
  */
-export type PolicyEventListener<TContext extends StruktosContextData = StruktosContextData> = (
-  event: PolicyEvent<TContext>
-) => void;
+export type PolicyEventListener<
+  TContext extends StruktosContextData = StruktosContextData,
+> = (event: PolicyEvent<TContext>) => void;
 
 /**
  * Dependency injection token for resilience policy factory.

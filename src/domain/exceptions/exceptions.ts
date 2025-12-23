@@ -1,17 +1,23 @@
 /**
  * @struktos/core - Exception Filter Interface
- * 
+ *
  * ASP.NET Core / NestJS-inspired exception handling for Struktos platform.
  * Provides a structured way to handle and transform exceptions into responses.
  */
 
 import { RequestContext, StruktosContextData } from '../context';
-import { StruktosResponse, HttpStatus, createErrorResponse } from '../../infrastructure/platform/types';
+import {
+  StruktosResponse,
+  HttpStatus,
+  createErrorResponse,
+} from '../../infrastructure/platform/types';
 
 /**
  * Exception context containing error and request information
  */
-export interface ExceptionContext<T extends StruktosContextData = StruktosContextData> {
+export interface ExceptionContext<
+  T extends StruktosContextData = StruktosContextData,
+> {
   /** The caught exception */
   error: Error;
 
@@ -33,10 +39,10 @@ export interface ExceptionContext<T extends StruktosContextData = StruktosContex
 
 /**
  * IExceptionFilter - Exception handling interface
- * 
+ *
  * Implements the catch method to transform exceptions into responses.
  * Multiple filters can be registered to handle different exception types.
- * 
+ *
  * @example
  * ```typescript
  * class ValidationExceptionFilter implements IExceptionFilter {
@@ -57,10 +63,12 @@ export interface ExceptionContext<T extends StruktosContextData = StruktosContex
  * }
  * ```
  */
-export interface IExceptionFilter<T extends StruktosContextData = StruktosContextData> {
+export interface IExceptionFilter<
+  T extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Handle an exception and return a response
-   * 
+   *
    * @param ctx - Exception context
    * @returns Response to send to client, or throws to pass to next filter
    */
@@ -70,16 +78,16 @@ export interface IExceptionFilter<T extends StruktosContextData = StruktosContex
 /**
  * Exception filter function type
  */
-export type ExceptionFilterFunction<T extends StruktosContextData = StruktosContextData> = (
-  ctx: ExceptionContext<T>
-) => Promise<StruktosResponse>;
+export type ExceptionFilterFunction<
+  T extends StruktosContextData = StruktosContextData,
+> = (ctx: ExceptionContext<T>) => Promise<StruktosResponse>;
 
 /**
  * Create an exception filter from a function
  */
-export function createExceptionFilter<T extends StruktosContextData = StruktosContextData>(
-  fn: ExceptionFilterFunction<T>
-): IExceptionFilter<T> {
+export function createExceptionFilter<
+  T extends StruktosContextData = StruktosContextData,
+>(fn: ExceptionFilterFunction<T>): IExceptionFilter<T> {
   return { catch: fn };
 }
 
@@ -92,7 +100,7 @@ export class HttpException extends Error {
   constructor(
     public readonly statusCode: number,
     message: string,
-    public readonly details?: any
+    public readonly details?: any,
   ) {
     super(message);
     this.name = 'HttpException';
@@ -156,7 +164,7 @@ export class ConflictException extends HttpException {
 export class ValidationException extends HttpException {
   constructor(
     message: string = 'Validation Failed',
-    public readonly errors: Record<string, string[]> = {}
+    public readonly errors: Record<string, string[]> = {},
   ) {
     super(HttpStatus.UNPROCESSABLE_ENTITY, message, errors);
     this.name = 'ValidationException';
@@ -167,7 +175,10 @@ export class ValidationException extends HttpException {
  * 429 Too Many Requests
  */
 export class TooManyRequestsException extends HttpException {
-  constructor(message: string = 'Too Many Requests', public readonly retryAfter?: number) {
+  constructor(
+    message: string = 'Too Many Requests',
+    public readonly retryAfter?: number,
+  ) {
     super(HttpStatus.TOO_MANY_REQUESTS, message, { retryAfter });
     this.name = 'TooManyRequestsException';
   }
@@ -204,7 +215,7 @@ export class DefaultExceptionFilter implements IExceptionFilter {
       includeStack?: boolean;
       includeDetails?: boolean;
       logErrors?: boolean;
-    } = {}
+    } = {},
   ) {
     this.options = {
       includeStack: process.env.NODE_ENV !== 'production',
@@ -228,13 +239,17 @@ export class DefaultExceptionFilter implements IExceptionFilter {
         status: error.statusCode,
         headers: { 'Content-Type': 'application/json' },
         body: {
-          error: error.name.replace('Exception', '').replace(/([A-Z])/g, ' $1').trim(),
+          error: error.name
+            .replace('Exception', '')
+            .replace(/([A-Z])/g, ' $1')
+            .trim(),
           message: error.message,
           statusCode: error.statusCode,
           traceId,
           timestamp: timestamp.toISOString(),
           path,
-          ...(this.options.includeDetails && error.details && { details: error.details }),
+          ...(this.options.includeDetails &&
+            error.details && { details: error.details }),
           ...(this.options.includeStack && { stack: error.stack }),
         },
       };
@@ -246,7 +261,9 @@ export class DefaultExceptionFilter implements IExceptionFilter {
       headers: { 'Content-Type': 'application/json' },
       body: {
         error: 'Internal Server Error',
-        message: this.options.includeDetails ? error.message : 'An unexpected error occurred',
+        message: this.options.includeDetails
+          ? error.message
+          : 'An unexpected error occurred',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         traceId,
         timestamp: timestamp.toISOString(),
@@ -352,7 +369,7 @@ export class ExceptionFilterChain implements IExceptionFilter {
     return createErrorResponse(
       HttpStatus.INTERNAL_SERVER_ERROR,
       'Internal Server Error',
-      lastError.message
+      lastError.message,
     );
   }
 }

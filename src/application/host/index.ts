@@ -1,6 +1,6 @@
 /**
  * @struktos/core - Hosting Module
- * 
+ *
  * Application hosting, adapters, and lifecycle management
  */
 

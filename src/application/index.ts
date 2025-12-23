@@ -27,7 +27,7 @@ export * from './host';
 
 /**
  * Dependency Injection exports
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -37,7 +37,7 @@ export * from './host';
  *   IServiceCollection,
  *   IServiceProvider
  * } from '@struktos/core/application';
- * 
+ *
  * @Injectable({ scope: ServiceScope.Singleton })
  * class MyService {
  *   constructor(
@@ -58,7 +58,7 @@ export { DependencyResolutionError } from './di';
 
 /**
  * CQRS exports
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -80,7 +80,7 @@ export type {
 
 /**
  * Host & Background Services exports
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -90,7 +90,4 @@ export type {
  * } from '@struktos/core/application';
  * ```
  */
-export type {
-  StruktosApp,
-  IBackgroundService,
-} from './host';
+export type { StruktosApp, IBackgroundService } from './host';

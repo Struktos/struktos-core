@@ -1,12 +1,12 @@
 /**
  * @struktos/core - Cache Module
- * 
+ *
  * High-performance caching utilities
  */
 
-export { 
-  CacheManager, 
+export {
+  CacheManager,
   CacheStats,
-  globalCache, 
-  createCacheManager 
+  globalCache,
+  createCacheManager,
 } from './CacheManager';

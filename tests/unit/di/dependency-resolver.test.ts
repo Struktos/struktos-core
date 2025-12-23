@@ -1,9 +1,9 @@
 /**
  * @fileoverview IMPROVED Unit tests for DI Container Dependency Resolution
- * 
+ *
  * Tests circular dependency detection, scope mismatch prevention,
  * and dependency graph visualization.
- * 
+ *
  * IMPROVEMENTS:
  * - MockServiceProvider now actually resolves dependencies
  * - MockServiceScope implements proper caching
@@ -34,7 +34,7 @@ interface ServiceDescriptor {
   implementationType?: new (...args: any[]) => any;
   scope: ServiceScope;
   instance?: any;
-  dependencies?: any[];  // Track dependencies
+  dependencies?: any[]; // Track dependencies
 }
 
 /**
@@ -45,7 +45,7 @@ class MockServiceCollection implements IServiceCollection {
 
   addSingleton<T>(
     serviceType: new (...args: any[]) => T,
-    implementationType?: new (...args: any[]) => T
+    implementationType?: new (...args: any[]) => T,
   ): this {
     this.descriptors.set(serviceType, {
       serviceType,
@@ -57,7 +57,7 @@ class MockServiceCollection implements IServiceCollection {
 
   addScoped<T>(
     serviceType: new (...args: any[]) => T,
-    implementationType?: new (...args: any[]) => T
+    implementationType?: new (...args: any[]) => T,
   ): this {
     this.descriptors.set(serviceType, {
       serviceType,
@@ -69,7 +69,7 @@ class MockServiceCollection implements IServiceCollection {
 
   addTransient<T>(
     serviceType: new (...args: any[]) => T,
-    implementationType?: new (...args: any[]) => T
+    implementationType?: new (...args: any[]) => T,
   ): this {
     this.descriptors.set(serviceType, {
       serviceType,
@@ -90,22 +90,22 @@ class MockServiceCollection implements IServiceCollection {
 class MockServiceProvider implements IDIServiceProvider {
   private singletonInstances: Map<any, any> = new Map();
   //private resolutionStack: string[] = [];
-  
+
   // Track dependencies for each service type
   private dependencyMap: Map<string, string[]> = new Map([
     // Circular: A → B → A
     ['ServiceA', ['ServiceB']],
     ['ServiceB', ['ServiceA']],
-    
+
     // Circular: X → Y → Z → X
     ['ServiceX', ['ServiceY']],
     ['ServiceY', ['ServiceZ']],
     ['ServiceZ', ['ServiceX']],
-    
+
     // Valid dependencies
     ['DatabaseService', ['LoggerService']],
     ['CommandHandler', ['DatabaseService', 'LoggerService']],
-    
+
     // No dependencies
     ['LoggerService', []],
     ['ConfigService', []],
@@ -126,14 +126,14 @@ class MockServiceProvider implements IDIServiceProvider {
 
   private resolve<T>(
     serviceType: new (...args: any[]) => T,
-    stack: string[]
+    stack: string[],
   ): T {
     const descriptor = this.descriptors.get(serviceType);
 
     if (!descriptor) {
       throw new DependencyResolutionError(
         `Service '${serviceType.name}' is not registered`,
-        this.buildGraph(stack, `${serviceType.name} (UNREGISTERED)`)
+        this.buildGraph(stack, `${serviceType.name} (UNREGISTERED)`),
       );
     }
 
@@ -141,19 +141,22 @@ class MockServiceProvider implements IDIServiceProvider {
     if (stack.includes(serviceType.name)) {
       throw new DependencyResolutionError(
         `Circular dependency detected: ${stack.join(' → ')} → ${serviceType.name}`,
-        this.buildGraph(stack, `${serviceType.name} (CIRCULAR!)`)
+        this.buildGraph(stack, `${serviceType.name} (CIRCULAR!)`),
       );
     }
 
     // Singleton cache
-    if (descriptor.scope === ServiceScope.Singleton && this.singletonInstances.has(serviceType)) {
+    if (
+      descriptor.scope === ServiceScope.Singleton &&
+      this.singletonInstances.has(serviceType)
+    ) {
       return this.singletonInstances.get(serviceType);
     }
 
     // CRITICAL: Resolve dependencies BEFORE creating instance
     const newStack = [...stack, serviceType.name];
     const dependencies = this.getDependencies(serviceType.name);
-    
+
     // Resolve each dependency (this is where circular deps are caught!)
     const resolvedDeps: any[] = [];
     for (const depName of dependencies) {
@@ -162,7 +165,7 @@ class MockServiceProvider implements IDIServiceProvider {
         // Dependency not found - throw error!
         throw new DependencyResolutionError(
           `Dependency '${depName}' required by '${serviceType.name}' is not registered`,
-          this.buildGraph(newStack, `${depName} (UNREGISTERED)`)
+          this.buildGraph(newStack, `${depName} (UNREGISTERED)`),
         );
       }
       resolvedDeps.push(this.resolve(depType, newStack));
@@ -171,7 +174,7 @@ class MockServiceProvider implements IDIServiceProvider {
     // Create instance
     const implementation = descriptor.implementationType || serviceType;
     const instance = new implementation();
-    
+
     // Manually inject dependencies (since we don't have real DI)
     this.injectDependencies(instance, dependencies, resolvedDeps);
 
@@ -196,16 +199,21 @@ class MockServiceProvider implements IDIServiceProvider {
     return null;
   }
 
-  private injectDependencies(instance: any, depNames: string[], depInstances: any[]): void {
+  private injectDependencies(
+    instance: any,
+    depNames: string[],
+    depInstances: any[],
+  ): void {
     // Try multiple property name patterns to handle different naming conventions
     depNames.forEach((depName, index) => {
       const patterns = [
         // Pattern 1: LoggerService → loggerService
         depName.charAt(0).toLowerCase() + depName.slice(1),
         // Pattern 2: LoggerService → logger (remove 'Service' suffix)
-        depName.replace('Service', '').charAt(0).toLowerCase() + depName.replace('Service', '').slice(1),
+        depName.replace('Service', '').charAt(0).toLowerCase() +
+          depName.replace('Service', '').slice(1),
       ];
-      
+
       // Try each pattern until we find a matching property
       for (const propName of patterns) {
         if (propName in instance) {
@@ -237,7 +245,7 @@ class MockServiceScope implements IServiceScope {
 
   constructor(
     private provider: MockServiceProvider,
-    private descriptors: Map<any, ServiceDescriptor>
+    private descriptors: Map<any, ServiceDescriptor>,
   ) {}
 
   getServiceProvider(): IDIServiceProvider {
@@ -245,18 +253,18 @@ class MockServiceScope implements IServiceScope {
     return {
       getService: <T>(serviceType: new (...args: any[]) => T): T => {
         const descriptor = this.descriptors.get(serviceType);
-        
+
         // If Scoped, use cache
         if (descriptor?.scope === ServiceScope.Scoped) {
           if (this.scopedInstances.has(serviceType)) {
             return this.scopedInstances.get(serviceType);
           }
-          
+
           const instance = this.provider.getService(serviceType);
           this.scopedInstances.set(serviceType, instance);
           return instance;
         }
-        
+
         // Otherwise, delegate to root provider
         return this.provider.getService(serviceType);
       },
@@ -348,7 +356,9 @@ describe('DI Container - Dependency Resolution', () => {
       services.addSingleton(ServiceA);
       provider = services.buildServiceProvider();
 
-      expect(() => provider.getService(UnregisteredService)).toThrow(DependencyResolutionError);
+      expect(() => provider.getService(UnregisteredService)).toThrow(
+        DependencyResolutionError,
+      );
     });
 
     it('should provide dependency graph showing UNREGISTERED service', () => {
@@ -360,7 +370,9 @@ describe('DI Container - Dependency Resolution', () => {
         fail('Should have thrown DependencyResolutionError');
       } catch (error) {
         expect(error).toBeInstanceOf(DependencyResolutionError);
-        expect((error as DependencyResolutionError).dependencyGraph).toContain('UNREGISTERED');
+        expect((error as DependencyResolutionError).dependencyGraph).toContain(
+          'UNREGISTERED',
+        );
       }
     });
   });
@@ -375,8 +387,12 @@ describe('DI Container - Dependency Resolution', () => {
       services.addSingleton(ServiceB);
       provider = services.buildServiceProvider();
 
-      expect(() => provider.getService(ServiceA)).toThrow(DependencyResolutionError);
-      expect(() => provider.getService(ServiceA)).toThrow(/Circular dependency/);
+      expect(() => provider.getService(ServiceA)).toThrow(
+        DependencyResolutionError,
+      );
+      expect(() => provider.getService(ServiceA)).toThrow(
+        /Circular dependency/,
+      );
     });
 
     it('should detect circular dependency: A → B → C → A', () => {
@@ -385,7 +401,9 @@ describe('DI Container - Dependency Resolution', () => {
       services.addSingleton(ServiceZ);
       provider = services.buildServiceProvider();
 
-      expect(() => provider.getService(ServiceX)).toThrow(DependencyResolutionError);
+      expect(() => provider.getService(ServiceX)).toThrow(
+        DependencyResolutionError,
+      );
     });
 
     it('should provide dependency graph showing CIRCULAR marker', () => {
@@ -398,7 +416,9 @@ describe('DI Container - Dependency Resolution', () => {
         fail('Should have thrown DependencyResolutionError');
       } catch (error) {
         expect(error).toBeInstanceOf(DependencyResolutionError);
-        expect((error as DependencyResolutionError).dependencyGraph).toContain('CIRCULAR');
+        expect((error as DependencyResolutionError).dependencyGraph).toContain(
+          'CIRCULAR',
+        );
       }
     });
   });
@@ -499,7 +519,9 @@ describe('DI Container - Dependency Resolution', () => {
       services.addSingleton(LoggerService);
       provider = services.buildServiceProvider();
 
-      expect(() => provider.getService(CommandHandler)).toThrow(DependencyResolutionError);
+      expect(() => provider.getService(CommandHandler)).toThrow(
+        DependencyResolutionError,
+      );
     });
   });
 

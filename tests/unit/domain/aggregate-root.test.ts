@@ -1,8 +1,8 @@
 /**
  * @fileoverview Unit tests for Aggregate Root and Domain Events
- * 
+ *
  * Tests the domain purity of aggregates and their event raising capabilities.
- * 
+ *
  * CRITICAL: Aggregate roots must have ZERO infrastructure dependencies.
  */
 
@@ -91,7 +91,7 @@ class User extends AggregateRoot {
     public readonly id: string,
     public email: string,
     public readonly name: string,
-    public isDeleted: boolean = false
+    public isDeleted: boolean = false,
   ) {
     super();
   }
@@ -104,7 +104,7 @@ class User extends AggregateRoot {
         userId: user.id,
         email: user.email,
         name: user.name,
-      })
+      }),
     );
 
     return user;
@@ -119,7 +119,7 @@ class User extends AggregateRoot {
         userId: this.id,
         oldEmail,
         newEmail,
-      })
+      }),
     );
   }
 
@@ -130,7 +130,7 @@ class User extends AggregateRoot {
       new UserDeletedEvent({
         userId: this.id,
         deletedAt: new Date().toISOString(),
-      })
+      }),
     );
   }
 }
@@ -150,8 +150,12 @@ describe('AggregateRoot and Domain Events', () => {
 
       expect(user.domainEvents).toHaveLength(1);
       expect(user.domainEvents[0]!.eventName).toBe('UserCreated');
-      expect((user.domainEvents[0] as UserCreatedEvent).payload.email).toBe('john@example.com');
-      expect((user.domainEvents[0] as UserCreatedEvent).payload.name).toBe('John Doe');
+      expect((user.domainEvents[0] as UserCreatedEvent).payload.email).toBe(
+        'john@example.com',
+      );
+      expect((user.domainEvents[0] as UserCreatedEvent).payload.name).toBe(
+        'John Doe',
+      );
     });
 
     it('should raise UserEmailChangedEvent when email changes', () => {
@@ -162,8 +166,12 @@ describe('AggregateRoot and Domain Events', () => {
 
       expect(user.domainEvents).toHaveLength(1);
       expect(user.domainEvents[0]!.eventName).toBe('UserEmailChanged');
-      expect((user.domainEvents[0] as UserEmailChangedEvent).payload.oldEmail).toBe('john@example.com');
-      expect((user.domainEvents[0] as UserEmailChangedEvent).payload.newEmail).toBe('newemail@example.com');
+      expect(
+        (user.domainEvents[0] as UserEmailChangedEvent).payload.oldEmail,
+      ).toBe('john@example.com');
+      expect(
+        (user.domainEvents[0] as UserEmailChangedEvent).payload.newEmail,
+      ).toBe('newemail@example.com');
     });
 
     it('should raise UserDeletedEvent when user is deleted', () => {
@@ -174,7 +182,9 @@ describe('AggregateRoot and Domain Events', () => {
 
       expect(user.domainEvents).toHaveLength(1);
       expect(user.domainEvents[0]!.eventName).toBe('UserDeleted');
-      expect((user.domainEvents[0] as UserDeletedEvent).payload.userId).toBe(user.id);
+      expect((user.domainEvents[0] as UserDeletedEvent).payload.userId).toBe(
+        user.id,
+      );
     });
 
     it('should accumulate multiple events', () => {
@@ -302,7 +312,7 @@ describe('AggregateRoot and Domain Events', () => {
         constructor(
           public readonly payload: UserCreatedPayload,
           correlationId: string,
-          actorId: string
+          actorId: string,
         ) {
           this.metadata = {
             eventId: `evt-${Date.now()}`,
@@ -316,20 +326,24 @@ describe('AggregateRoot and Domain Events', () => {
       class CustomUser extends AggregateRoot {
         constructor(
           public readonly id: string,
-          public readonly email: string
+          public readonly email: string,
         ) {
           super();
         }
 
-        static create(email: string, correlationId: string, actorId: string): CustomUser {
+        static create(
+          email: string,
+          correlationId: string,
+          actorId: string,
+        ): CustomUser {
           const user = new CustomUser(`user-${Date.now()}`, email);
 
           user.raiseEvent(
             new CustomUserCreatedEvent(
               { userId: user.id, email: user.email, name: 'Test' },
               correlationId,
-              actorId
-            )
+              actorId,
+            ),
           );
 
           return user;
@@ -339,7 +353,7 @@ describe('AggregateRoot and Domain Events', () => {
       const user = CustomUser.create(
         'john@example.com',
         'corr-123',
-        'admin-456'
+        'admin-456',
       );
 
       const event = user.domainEvents[0];

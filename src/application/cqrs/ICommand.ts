@@ -9,7 +9,10 @@
  * @see {@link https://martinfowler.com/bliki/CQRS.html | CQRS Pattern}
  */
 
-import type { IContext, StruktosContextData } from '../../domain/context/IContext';
+import type {
+  IContext,
+  StruktosContextData,
+} from '../../domain/context/IContext';
 
 /**
  * Base command metadata interface.
@@ -257,7 +260,9 @@ export abstract class CommandBase<TResult = void> implements ICommand<TResult> {
  * await commandBus.execute(command, options);
  * ```
  */
-export interface CommandExecutionOptions<TContext extends StruktosContextData = StruktosContextData> {
+export interface CommandExecutionOptions<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Maximum time in milliseconds to wait for command execution.
    * @defaultValue 30000 (30 seconds)
@@ -404,7 +409,9 @@ export interface CommandResult<TResult> {
  * }
  * ```
  */
-export interface ICommandBus<TContext extends StruktosContextData = StruktosContextData> {
+export interface ICommandBus<
+  TContext extends StruktosContextData = StruktosContextData,
+> {
   /**
    * Execute a command and return its result.
    *
@@ -430,7 +437,7 @@ export interface ICommandBus<TContext extends StruktosContextData = StruktosCont
    */
   execute<TResult>(
     command: ICommand<TResult>,
-    options?: CommandExecutionOptions<TContext>
+    options?: CommandExecutionOptions<TContext>,
   ): Promise<TResult>;
 
   /**
@@ -457,7 +464,7 @@ export interface ICommandBus<TContext extends StruktosContextData = StruktosCont
    */
   executeWithResult<TResult>(
     command: ICommand<TResult>,
-    options?: CommandExecutionOptions<TContext>
+    options?: CommandExecutionOptions<TContext>,
   ): Promise<CommandResult<TResult>>;
 
   /**
@@ -476,7 +483,7 @@ export interface ICommandBus<TContext extends StruktosContextData = StruktosCont
    */
   register<TCommand extends ICommand<TResult>, TResult>(
     commandType: string | (new (...args: unknown[]) => TCommand),
-    handler: ICommandHandler<TCommand, TResult>
+    handler: ICommandHandler<TCommand, TResult>,
   ): void;
 
   /**
@@ -492,7 +499,9 @@ export interface ICommandBus<TContext extends StruktosContextData = StruktosCont
    * }
    * ```
    */
-  hasHandler(commandType: string | (new (...args: unknown[]) => ICommand<unknown>)): boolean;
+  hasHandler(
+    commandType: string | (new (...args: unknown[]) => ICommand<unknown>),
+  ): boolean;
 }
 
 /**
@@ -502,7 +511,10 @@ export interface ICommandBus<TContext extends StruktosContextData = StruktosCont
  * @template TCommand - The command type this handler processes
  * @template TResult - The type of result returned by the handler
  */
-export interface ICommandHandler<TCommand extends ICommand<TResult>, TResult = void> {
+export interface ICommandHandler<
+  TCommand extends ICommand<TResult>,
+  TResult = void,
+> {
   /**
    * Execute the command and return a result.
    *
