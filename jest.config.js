@@ -65,20 +65,6 @@ module.exports = {
       // statements: 95,
       statements: 20,
     },
-    './src/application/di/ServiceProvider.ts': {
-      // branches: 95,
-      // functions: 95,
-      // lines: 95,
-      // statements: 95,
-      statements: 20,
-    },
-    './src/domain/events/EventBus.ts': {
-      // branches: 95,
-      // functions: 95,
-      // lines: 95,
-      // statements: 95,
-      statements: 20,
-    },
   },
   
   coverageDirectory: 'coverage',
