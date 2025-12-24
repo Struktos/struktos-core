@@ -16,6 +16,7 @@
     /* Emit */
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": true,
     "sourceMap": true,
     "outDir": "./dist",
     "removeComments": false,
